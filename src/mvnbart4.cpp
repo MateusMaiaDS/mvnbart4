@@ -1374,12 +1374,23 @@ Rcpp::List cppbart(arma::mat x_train,
 // =====================================
 // CLASSIFICATION BART FUNCTIONS
 // =====================================
-double up_tn_sampler(double mean_, double lower, double v_j_){
+double up_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double lower, double v_j_,
+                     int i_, int j_,
+                     arma::mat &Sigma_mj_mj_inv_, arma::mat &Sigma_j_mj_,
+                     arma::mat &Sigma_mj_j_){
 
         bool sample_bool = true;
         int exit = 0;
 
+        // Getting the shed vesion
+        arma::mat z_mj = z_mat_;
+        arma::mat z_mj_hat = mean_mat_;
+        z_mj.shed_col(j_);
+        z_mj_hat.shed_col(j_);
+        double mean_ = mean_mat_(i_,j_) + arma::as_scalar(Sigma_mj_j_*Sigma_mj_mj_inv_*(z_mj.row(i_)-(z_mj_hat.row(i_)))); // Old version
+
         while(sample_bool){
+
                 double sample = R::rnorm(mean_,sqrt(v_j_));
 
                 if(sample > lower){
@@ -1397,12 +1408,24 @@ double up_tn_sampler(double mean_, double lower, double v_j_){
         return 0.0;
 }
 
-double lw_tn_sampler(double mean_, double upper, double v_j_){
+double lw_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double upper, double v_j_,
+                     int i_, int j_,
+                     arma::mat &Sigma_mj_mj_inv_, arma::mat &Sigma_j_mj_,
+                     arma::mat &Sigma_mj_j_){
 
         bool sample_bool = true;
         int exit = 0;
 
+        // Getting the shed vesion
+        arma::mat z_mj = z_mat_;
+        arma::mat z_mj_hat = mean_mat_;
+        z_mj.shed_col(j_);
+        z_mj_hat.shed_col(j_);
+        double mean_ = mean_mat_(i_,j_) + arma::as_scalar(Sigma_mj_j_*Sigma_mj_mj_inv_*(z_mj.row(i_)-(z_mj_hat.row(i_)))); // Old version
+
         while(sample_bool){
+
+
                 double sample = R::rnorm(mean_,sqrt(v_j_));
 
                 if(sample <= upper){
@@ -1424,16 +1447,21 @@ double lw_tn_sampler(double mean_, double upper, double v_j_){
 void update_z(arma::mat &z_mat_,
               arma::mat &y_hat,
               modelParam &data,
-              int j_){
+              int j_,
+              arma::mat &Sigma_mj_mj_inv_,
+              arma::mat &Sigma_j_mj_,
+              arma::mat &Sigma_mj_j_){
 
         // cout << "Nrow z_mat_" << y_hat.n_rows << "-- ncols: " << y_hat.n_cols << endl;
         for(int i = 0; i < data.x_train.n_rows; i++){
 
                 if(data.y_mat(i,j_)==1){
                         // cout << "Y_hat(" <<i<<","<<j_<<") :" << y_hat(i,j_) << endl;
-                        z_mat_(i,j_) = up_tn_sampler(y_hat(i,j_),0.0,data.v_j);
+                        z_mat_(i,j_) = up_tn_sampler(z_mat_,y_hat,0.0,data.v_j,
+                               i,j_,Sigma_mj_mj_inv_,Sigma_j_mj_,Sigma_mj_j_);
                 } else {
-                        z_mat_(i,j_) = lw_tn_sampler(y_hat(i,j_),0.0,data.v_j);
+                        z_mat_(i,j_) = lw_tn_sampler(z_mat_,y_hat,0.0,data.v_j,
+                               i,j_,Sigma_mj_mj_inv_,Sigma_j_mj_,Sigma_mj_j_);
                 }
         }
 }
@@ -1591,7 +1619,7 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                         // ============================================
                         // This step does not iterate over the trees!!!
                         // ===========================================
-                        y_mj = z_mat_train;
+                        y_mj = z_mat_train; // PAY ATTENTION THAT HERE I USING Z_MAT INSTEAD!
                         y_mj.shed_col(j);
                         y_hat_mj = y_mat_hat;
                         y_hat_mj.shed_col(j);
@@ -1677,7 +1705,7 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
 
                         // Updating z_j values
                         // Rcpp::Rcout << "Error on update z" << endl;
-                        update_z(z_mat_train,y_mat_hat,data,j);
+                        update_z(z_mat_train,y_mat_hat,data,j,Sigma_mj_mj_inv,Sigma_j_mj,Sigma_mj_j);
                         // Rcpp::Rcout << "Sucess!" << endl;
 
                 }// End of iterations over "j"
