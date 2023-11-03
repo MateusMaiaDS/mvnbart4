@@ -90,6 +90,11 @@ double log_mvn_post_cor_sample(arma::mat y_hat_, // The number of observations a
 };
 
 
+// Creating the optim function for the correlation sampler
+class LogOptimPost : public Functor {
+public:
+};
+
 // //[[Rcpp::export]]
 arma::mat sum_exclude_col(arma::mat mat, int exclude_int){
 
@@ -1369,13 +1374,13 @@ Rcpp::List cppbart(arma::mat x_train,
 // =====================================
 // CLASSIFICATION BART FUNCTIONS
 // =====================================
-double up_tn_sampler(double mean_, double lower){
+double up_tn_sampler(double mean_, double lower, double v_j_){
 
         bool sample_bool = true;
         int exit = 0;
 
         while(sample_bool){
-                double sample = R::rnorm(mean_,1);
+                double sample = R::rnorm(mean_,v_j_);
 
                 if(sample > lower){
                         return sample;
@@ -1392,13 +1397,13 @@ double up_tn_sampler(double mean_, double lower){
         return 0.0;
 }
 
-double lw_tn_sampler(double mean_, double upper){
+double lw_tn_sampler(double mean_, double upper, double v_j_){
 
         bool sample_bool = true;
         int exit = 0;
 
         while(sample_bool){
-                double sample = R::rnorm(mean_,1);
+                double sample = R::rnorm(mean_,v_j_);
 
                 if(sample <= upper){
                         return sample;
@@ -1419,15 +1424,16 @@ double lw_tn_sampler(double mean_, double upper){
 void update_z(arma::mat &z_mat_,
               arma::mat &y_hat,
               modelParam &data,
-              int j_){
+              int j_,
+              double v_j_){
 
         // cout << "Nrow z_mat_" << y_hat.n_rows << "-- ncols: " << y_hat.n_cols << endl;
         for(int i = 0; i < data.x_train.n_rows; i++){
 
                 if(data.y_mat(i,j_)==1){
-                        z_mat_(i,j_) = up_tn_sampler(y_hat(i,j_),0.0);
+                        z_mat_(i,j_) = up_tn_sampler(y_hat(i,j_),0.0,v_j_);
                 } else {
-                        z_mat_(i,j_) = lw_tn_sampler(y_hat(i,j_),0.0);
+                        z_mat_(i,j_) = lw_tn_sampler(y_hat(i,j_),0.0,v_j_);
                 }
         }
 }
@@ -1665,7 +1671,7 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
 
                         // Updating z_j values
                         // Rcpp::Rcout << "Error on update z" << endl;
-                        update_z(z_mat_train,y_mat_hat,data,j);
+                        update_z(z_mat_train,y_mat_hat,data,j,data.v_j);
                         // Rcpp::Rcout << "Sucess!" << endl;
 
                 }// End of iterations over "j"
