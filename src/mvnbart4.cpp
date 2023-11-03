@@ -9,6 +9,87 @@ using namespace std;
 // Statistics Function
 // =====================================
 
+// Function to create a correlation matrix from correlation coefficients
+arma::mat makeSigma(arma::vec sigma, int d) {
+
+        // Checking the inputs
+        if(sigma.size()!= (d*(d-1))/2){
+                Rcpp::stop("No match among sigma vector and d-dimension");
+        }
+
+        arma::mat Sigma(d, d, arma::fill::eye);
+
+        int index = 0;
+        for (int i = 0; i < d; i++) {
+                for (int j = i + 1; j < d; j++) {
+                        Sigma(i, j) = sigma(index);
+                        Sigma(j, i) = sigma(index);
+                        index++;
+                }
+        }
+
+        return Sigma;
+}
+
+
+
+// Function to calculate the log of a MVN distribution
+//[[Rcpp::export]]
+double log_dmvn(arma::vec& x, arma::mat& Sigma){
+
+        arma::mat L = arma::chol(Sigma ,"lower"); // Remove diagonal later
+        arma::vec D = L.diag();
+        double p = Sigma.n_cols;
+
+        arma::vec z(p);
+        double out;
+        double acc;
+
+        for(int ip=0;ip<p;ip++){
+                acc = 0.0;
+                for(int ii = 0; ii < ip; ii++){
+                        acc += z(ii)*L(ip,ii);
+                }
+                z(ip) = (x(ip)-acc)/D(ip);
+        }
+        out = (-0.5*sum(square(z))-( (p/2.0)*log(2.0*M_PI) +sum(log(D)) ));
+
+
+        return out;
+
+};
+
+
+// === Slow version but matches with THE R code // maybe can be slightly improved===
+//[[Rcpp::export]]
+double log_mvn_post_cor_sample(arma::mat y_hat_, // The number of observations are the column
+                               arma::mat y_mat_,
+                               arma::vec& sigmas,int d,
+                               arma::vec& sigmas_0){
+
+        // Defining some quantities;
+        double likelihood_term = 0.0;
+        // int n_sigma_ = (d*(d-1))/2;
+        arma::mat Sigma_= makeSigma(sigmas,d);
+        arma::mat res_ = (y_mat_-y_hat_).t();
+        // cout << "Nrows: " << res_.n_rows << endl;
+        for(int ii = 0; ii < res_.n_cols; ii++){
+                arma::vec aux_res_ = res_.col(ii);
+                likelihood_term = likelihood_term +  arma::as_scalar(aux_res_.t()*arma::inv(Sigma_)*aux_res_);
+        }
+
+        arma::mat Sigma_0_(d, d, arma::fill::eye);
+        arma::vec sigmas_diff = (sigmas-sigmas_0);
+
+        return -0.5*y_mat_.n_rows*log(det(Sigma_))-0.5*likelihood_term - 0.5*arma::as_scalar(sigmas_diff.t()*arma::inv(Sigma_0_)*sigmas_diff);
+
+
+        // return likelihood_term;
+
+
+};
+
+
 // //[[Rcpp::export]]
 arma::mat sum_exclude_col(arma::mat mat, int exclude_int){
 
@@ -1307,7 +1388,7 @@ double up_tn_sampler(double mean_, double lower){
                 }
         }
 
-        Rcpp::stop(" Choose another lower boundary");
+        Rcpp::stop(" Choose another upper boundary");
         return 0.0;
 }
 
