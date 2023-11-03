@@ -1380,7 +1380,7 @@ double up_tn_sampler(double mean_, double lower, double v_j_){
         int exit = 0;
 
         while(sample_bool){
-                double sample = R::rnorm(mean_,v_j_);
+                double sample = R::rnorm(mean_,sqrt(v_j_));
 
                 if(sample > lower){
                         return sample;
@@ -1403,7 +1403,7 @@ double lw_tn_sampler(double mean_, double upper, double v_j_){
         int exit = 0;
 
         while(sample_bool){
-                double sample = R::rnorm(mean_,v_j_);
+                double sample = R::rnorm(mean_,sqrt(v_j_));
 
                 if(sample <= upper){
                         return sample;
@@ -1424,16 +1424,16 @@ double lw_tn_sampler(double mean_, double upper, double v_j_){
 void update_z(arma::mat &z_mat_,
               arma::mat &y_hat,
               modelParam &data,
-              int j_,
-              double v_j_){
+              int j_){
 
         // cout << "Nrow z_mat_" << y_hat.n_rows << "-- ncols: " << y_hat.n_cols << endl;
         for(int i = 0; i < data.x_train.n_rows; i++){
 
                 if(data.y_mat(i,j_)==1){
-                        z_mat_(i,j_) = up_tn_sampler(y_hat(i,j_),0.0,v_j_);
+                        // cout << "Y_hat(" <<i<<","<<j_<<") :" << y_hat(i,j_) << endl;
+                        z_mat_(i,j_) = up_tn_sampler(y_hat(i,j_),0.0,data.v_j);
                 } else {
-                        z_mat_(i,j_) = lw_tn_sampler(y_hat(i,j_),0.0,v_j_);
+                        z_mat_(i,j_) = lw_tn_sampler(y_hat(i,j_),0.0,data.v_j);
                 }
         }
 }
@@ -1524,6 +1524,8 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
 
         // Initialising the z_matrix
         arma::mat z_mat_train(data.x_train.n_rows,data.y_mat.n_cols,arma::fill::zeros);
+        arma::mat y_mj(data.x_train.n_rows,data.y_mat.n_cols);
+        arma::mat y_hat_mj(data.x_train.n_rows,data.y_mat.n_cols);
 
         for(int i = 0;i<data.n_mcmc;i++){
 
@@ -1548,10 +1550,13 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                 arma::mat prediction_train_sum(data.x_train.n_rows,data.y_mat.n_cols,arma::fill::zeros);
                 arma::mat prediction_test_sum(data.x_test.n_rows,data.y_mat.n_cols,arma::fill::zeros);
 
-
+                // ==
+                // This was here
+                //===
+                // arma::mat y_mj(data.x_train.n_rows,data.y_mat.n_cols);
+                // arma::mat y_hat_mj(data.x_train.n_rows,data.y_mat.n_cols);
+                //
                 arma::vec partial_u(data.x_train.n_rows);
-                arma::mat y_mj(data.x_train.n_rows,data.y_mat.n_cols);
-                arma::mat y_hat_mj(data.x_train.n_rows,data.y_mat.n_cols);
 
                 // Iterating over the d-dimension MATRICES of the response.
                 for(int j = 0; j < data.y_mat.n_cols; j++){
@@ -1586,7 +1591,7 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                         // ============================================
                         // This step does not iterate over the trees!!!
                         // ===========================================
-                        y_mj = data.y_mat;
+                        y_mj = z_mat_train;
                         y_mj.shed_col(j);
                         y_hat_mj = y_mat_hat;
                         y_hat_mj.shed_col(j);
@@ -1603,6 +1608,7 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
 
                         double v = Sigma_j_j - arma::as_scalar(Sigma_j_mj*Sigma_mj_mj_inv*Sigma_mj_j);
                         data.v_j = v;
+                        // cout << " Variance term: " << data.v_j << endl;
 
                         data.sigma_mu_j = data.sigma_mu(j);
 
@@ -1671,7 +1677,7 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
 
                         // Updating z_j values
                         // Rcpp::Rcout << "Error on update z" << endl;
-                        update_z(z_mat_train,y_mat_hat,data,j,data.v_j);
+                        update_z(z_mat_train,y_mat_hat,data,j);
                         // Rcpp::Rcout << "Sucess!" << endl;
 
                 }// End of iterations over "j"

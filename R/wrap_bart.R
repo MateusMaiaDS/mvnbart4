@@ -125,7 +125,7 @@ mvnbart4 <- function(x_train,
 
      # Defining tau_mu_j
      if(class_model){
-             tau_mu_j <- rep((4*n_tree*(kappa^2))/9.0,NCOL(y_mat))
+             tau_mu_j <- rep((n_tree*(kappa^2))/9.0,NCOL(y_mat))
      } else {
              tau_mu_j <- (4*n_tree*(kappa^2))/((max_y-min_y)^2)
      }
