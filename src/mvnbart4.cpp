@@ -90,10 +90,10 @@ double log_mvn_post_cor_sample(arma::mat y_hat_, // The number of observations a
 };
 
 
-// Creating the optim function for the correlation sampler
-class LogOptimPost : public Functor {
-public:
-};
+// // Creating the optim function for the correlation sampler
+// class LogOptimPost : public Functor {
+// public:
+// };
 
 // //[[Rcpp::export]]
 arma::mat sum_exclude_col(arma::mat mat, int exclude_int){

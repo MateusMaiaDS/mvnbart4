@@ -22,6 +22,6 @@ usequants <- FALSE
 node_min_size <- 5
 Sigma_init <- NULL
 
-probit_bart <- mvnbart4(x_train = x_train,y_mat = y_mat,x_test = x_test,n_tree = 100)
+probit_bart <- mvnbart4(x_train = x_train,y_mat = y_mat,x_test = x_test,n_tree = 100,Sigma_init = Sigma)
 table(probit_bart$y_hat_mean_class[,1],data_train$C)
 table(probit_bart$y_hat_mean_class[,2],data_train$Q)
