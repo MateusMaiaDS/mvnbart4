@@ -35,7 +35,8 @@ arma::mat makeSigma(arma::vec sigma, int d) {
 double log_mvn_post_cor_sample(arma::mat y_hat_, // The number of observations are the column
                                arma::mat y_mat_,
                                arma::vec& sigmas,int d,
-                               arma::vec& sigmas_0){
+                               arma::vec& sigmas_0,
+                               arma::mat& Sigma_0){
 
      // Defining some quantities;
      double likelihood_term = 0.0;
@@ -48,7 +49,13 @@ double log_mvn_post_cor_sample(arma::mat y_hat_, // The number of observations a
           likelihood_term = likelihood_term +  arma::as_scalar(aux_res_.t()*arma::inv(Sigma_)*aux_res_);
      }
 
-     arma::mat Sigma_0_((d*d-d)/2, (d*d-d)/2, arma::fill::eye);
+     // arma::mat Sigma_0_((d*d-d)/2, (d*d-d)/2, arma::fill::eye);
+     if((Sigma_0.n_cols!=0.5*(d*d-d)) | (Sigma_0.n_rows!=0.5*(d*d-d))){
+             Rcpp::stop("Insert a valid variance prior.");
+     }
+
+     arma::mat Sigma_0_ = Sigma_0;
+
      arma::vec sigmas_diff = (sigmas-sigmas_0);
 
      // arma::cout << " All good" << arma::endl;
@@ -78,6 +85,7 @@ public:
         // Creating the data for the LogLikePost
         LogLikePost(int d_,
               arma::vec sigma_0_,
+              arma::mat Sigma_0_,
               arma::mat y_mat_,
               arma::mat y_hat_){
 
@@ -103,6 +111,7 @@ public:
                         likelihood_term = likelihood_term +  arma::as_scalar(aux_res_.t()*arma::inv(Sigma)*aux_res_);
                 }
 
+                // arma::mat Sigma_0 = makeSigma(sigma_0,d);
                 arma::vec sigmas_diff = (x-sigma_0);
 
                 double final_value = -0.5*y_mat.n_rows*log(det(Sigma))-0.5*likelihood_term - 0.5*arma::as_scalar(sigmas_diff.t()*arma::inv(Sigma_0)*sigmas_diff);
@@ -119,6 +128,8 @@ public:
 // [[Rcpp::export]]
 arma::vec sigma_draw_cpp(int d,
                 arma::vec sigma_0,
+                arma::mat Sigma_0,
+                arma::vec sigma_init_optim_,
                 arma::mat y_mat,
                 arma::mat y_hat,
                 double df) {
@@ -126,6 +137,7 @@ arma::vec sigma_draw_cpp(int d,
         // Setting the constructor of the LogLikePost
         LogLikePost optim_obj(d,
                        sigma_0,
+                       Sigma_0,
                        y_mat,
                        y_hat);
 
@@ -134,7 +146,8 @@ arma::vec sigma_draw_cpp(int d,
         opt.control.maxit = 3;
         opt.set_hessian(true);
         // Setting the obj.
-        opt.minimize(optim_obj, sigma_0);
+        // arma::vec sigma_init;
+        opt.minimize(optim_obj, sigma_init_optim_);
         arma::vec mu_ = opt.par();
 
         arma::mat S = 1.0*arma::inv(opt.hessian());
@@ -155,6 +168,8 @@ arma::vec sigma_draw_cpp(int d,
 arma::mat sigma_sampler(int nmcmc,
                         int d,
                         arma::vec sigma_0,
+                        arma::mat Sigma_0,
+                        arma::vec sigma_init_optim,
                         arma::mat y_mat,
                         arma::mat y_hat,
                         double df){
@@ -162,20 +177,30 @@ arma::mat sigma_sampler(int nmcmc,
         arma::mat sigma_post((d*d-d)/2,nmcmc,arma::fill::zeros);
         sigma_post.col(0) = sigma_0;
 
-
+        if(sigma_init_optim.size()!=(d*d-d)/2){
+                Rcpp::stop("Insert a valid sigma initialisation");
+        }
         // Testing the loglikelihood
         for(int ii=1; ii < nmcmc; ii++){
 
                 // Generating the sampler
                 arma::vec draw = sigma_draw_cpp(d,
                                                 sigma_0,
+                                                Sigma_0,
+                                                sigma_init_optim,
                                                 y_mat,
                                                 y_hat,df);
 
                 double prob_;
-                if((arma::det(makeSigma(draw,d)))>0  & max(abs(draw))<1){
+                arma::mat new_Sigma0 = makeSigma(draw,d);
+                arma::vec eigen_val ;
+                arma::mat eigen_vec;
+                arma::eig_sym(eigen_val,eigen_vec,new_Sigma0);
+
+                if(arma::min(eigen_val)>0  & max(abs(draw))<1){
                         arma::vec prev_sigma = sigma_post.col(ii-1);
-                        prob_ = exp(log_mvn_post_cor_sample(y_hat,y_mat,draw,d,sigma_0) - log_mvn_post_cor_sample(y_hat,y_mat,prev_sigma,d,sigma_0));
+                        prob_ = exp(log_mvn_post_cor_sample(y_hat,y_mat,draw,d,sigma_0,Sigma_0) -
+                                log_mvn_post_cor_sample(y_hat,y_mat,prev_sigma,d,sigma_0,Sigma_0));
                 } else {
                         prob_ = 0;
                 }

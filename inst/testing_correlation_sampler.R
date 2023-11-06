@@ -27,10 +27,11 @@ makeSigma <- function(sigma, d){
 }
 
 # Simluating Residuals
-n <- 100
+n <- 200
 d <- 2
 
-sigma_true <- c(-0.8) # must be of length (d^2 - d)/2
+sigma_true <- c(0.8) # must be of length (d^2 - d)/2
+
 Sigma_true <- makeSigma(sigma_true, d)
 det(Sigma_true) # must be > 0
 Sigma_true_chol <- t(chol(Sigma_true))
@@ -42,7 +43,9 @@ for (i in 1:n){
 
 
 # Setting the initial values
-sigma0 <- rep(0.0, (d^2 - d)/2)
+sigma0 <- rep(0.0, (d^2 - d)/2) +0.1
+Sigma0 <- makeSigma(sigma0,(d*d-d)*0.5)
+diag(Sigma0) <- rep(0.5, nrow(Sigma0))
 df_ <- 5
 
 #Just to auxiliar I gonna define y_mat as the residuals and y_hat as the zero matrix
@@ -53,11 +56,22 @@ n_mcmc <- 2000
 sigma_post <- sigma_sampler(nmcmc = n_mcmc,
               d = d,
               sigma_0 = sigma0,
+              sigma_init_optim = sigma0+0.4,
               y_mat = y_mat_,
-              y_hat = y_hat_,df = df_)
+              y_hat = y_hat_,df = df_,Sigma_0 = Sigma0)
 
 # Plottin for the 2d case
 if(d==2){
+     par(mfrow= c(1,1))
      plot(c(sigma_post),type = "l")
      abline(h = sigma_true, lty = 2, col = "blue", lwd = 2)
+} else {
+     par(mfrow = c(nrow(sigma_post),1))
+     for(i in 1:nrow(sigma_post)){
+          exp_ <- expression(sigma(i))
+          plot(sigma_post[i,], type = "l", ylab = expression(sigma))
+          abline(h = sigma_true[i], lty = 2, col = "blue", lwd = 2)
+     }
 }
+
+
