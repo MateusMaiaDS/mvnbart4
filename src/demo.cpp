@@ -144,7 +144,7 @@ arma::vec sigma_draw_cpp(int d,
         }
 
         // Generating a vec sample
-
+        // arma::cout << S << arma::endl;
         arma::vec y = arma::chol(S).t()*r_sample;
         double u = R::rchisq(df);
         return sqrt(df/u)*y + mu_;
@@ -159,7 +159,7 @@ arma::mat sigma_sampler(int nmcmc,
                         arma::mat y_hat,
                         double df){
 
-        arma::mat sigma_post((d*d-d)/2,nmcmc);
+        arma::mat sigma_post((d*d-d)/2,nmcmc,arma::fill::zeros);
         sigma_post.col(0) = sigma_0;
 
 
@@ -168,7 +168,7 @@ arma::mat sigma_sampler(int nmcmc,
 
                 // Generating the sampler
                 arma::vec draw = sigma_draw_cpp(d,
-                                                sigma_post.col(ii-1),
+                                                sigma_0,
                                                 y_mat,
                                                 y_hat,df);
 

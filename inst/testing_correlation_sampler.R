@@ -30,7 +30,7 @@ makeSigma <- function(sigma, d){
 n <- 100
 d <- 2
 
-sigma_true <- c(0.1) # must be of length (d^2 - d)/2
+sigma_true <- c(-0.8) # must be of length (d^2 - d)/2
 Sigma_true <- makeSigma(sigma_true, d)
 det(Sigma_true) # must be > 0
 Sigma_true_chol <- t(chol(Sigma_true))
@@ -42,7 +42,7 @@ for (i in 1:n){
 
 
 # Setting the initial values
-sigma0 <- rep(0, (d^2 - d)/2)
+sigma0 <- rep(0.0, (d^2 - d)/2)
 df_ <- 5
 
 #Just to auxiliar I gonna define y_mat as the residuals and y_hat as the zero matrix
