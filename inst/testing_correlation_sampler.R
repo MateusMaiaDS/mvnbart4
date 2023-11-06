@@ -28,9 +28,9 @@ makeSigma <- function(sigma, d){
 
 # Simluating Residuals
 n <- 200
-d <- 2
+d <- 3
 
-sigma_true <- c(0.8) # must be of length (d^2 - d)/2
+sigma_true <- c(0.5,0.1,-0.1) # must be of length (d^2 - d)/2
 
 Sigma_true <- makeSigma(sigma_true, d)
 det(Sigma_true) # must be > 0
