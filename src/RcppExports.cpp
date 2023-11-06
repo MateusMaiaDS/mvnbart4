@@ -11,18 +11,6 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// log_dmvn
-double log_dmvn(arma::vec& x, arma::mat& Sigma);
-RcppExport SEXP _mvnbart4_log_dmvn(SEXP xSEXP, SEXP SigmaSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type Sigma(SigmaSEXP);
-    rcpp_result_gen = Rcpp::wrap(log_dmvn(x, Sigma));
-    return rcpp_result_gen;
-END_RCPP
-}
 // log_mvn_post_cor_sample
 double log_mvn_post_cor_sample(arma::mat y_hat_, arma::mat y_mat_, arma::vec& sigmas, int d, arma::vec& sigmas_0);
 RcppExport SEXP _mvnbart4_log_mvn_post_cor_sample(SEXP y_hat_SEXP, SEXP y_mat_SEXP, SEXP sigmasSEXP, SEXP dSEXP, SEXP sigmas_0SEXP) {
@@ -35,6 +23,49 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type d(dSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type sigmas_0(sigmas_0SEXP);
     rcpp_result_gen = Rcpp::wrap(log_mvn_post_cor_sample(y_hat_, y_mat_, sigmas, d, sigmas_0));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sigma_draw_cpp
+arma::vec sigma_draw_cpp(int d, arma::vec sigma_0, arma::mat y_mat, arma::mat y_hat, double df);
+RcppExport SEXP _mvnbart4_sigma_draw_cpp(SEXP dSEXP, SEXP sigma_0SEXP, SEXP y_matSEXP, SEXP y_hatSEXP, SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type sigma_0(sigma_0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type y_mat(y_matSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type y_hat(y_hatSEXP);
+    Rcpp::traits::input_parameter< double >::type df(dfSEXP);
+    rcpp_result_gen = Rcpp::wrap(sigma_draw_cpp(d, sigma_0, y_mat, y_hat, df));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sigma_sampler
+arma::mat sigma_sampler(int nmcmc, int d, arma::vec sigma_0, arma::mat y_mat, arma::mat y_hat, double df);
+RcppExport SEXP _mvnbart4_sigma_sampler(SEXP nmcmcSEXP, SEXP dSEXP, SEXP sigma_0SEXP, SEXP y_matSEXP, SEXP y_hatSEXP, SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type nmcmc(nmcmcSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type sigma_0(sigma_0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type y_mat(y_matSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type y_hat(y_hatSEXP);
+    Rcpp::traits::input_parameter< double >::type df(dfSEXP);
+    rcpp_result_gen = Rcpp::wrap(sigma_sampler(nmcmc, d, sigma_0, y_mat, y_hat, df));
+    return rcpp_result_gen;
+END_RCPP
+}
+// log_dmvn
+double log_dmvn(arma::vec& x, arma::mat& Sigma);
+RcppExport SEXP _mvnbart4_log_dmvn(SEXP xSEXP, SEXP SigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type Sigma(SigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_dmvn(x, Sigma));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -91,8 +122,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_mvnbart4_log_dmvn", (DL_FUNC) &_mvnbart4_log_dmvn, 2},
     {"_mvnbart4_log_mvn_post_cor_sample", (DL_FUNC) &_mvnbart4_log_mvn_post_cor_sample, 5},
+    {"_mvnbart4_sigma_draw_cpp", (DL_FUNC) &_mvnbart4_sigma_draw_cpp, 5},
+    {"_mvnbart4_sigma_sampler", (DL_FUNC) &_mvnbart4_sigma_sampler, 6},
+    {"_mvnbart4_log_dmvn", (DL_FUNC) &_mvnbart4_log_dmvn, 2},
     {"_mvnbart4_cppbart", (DL_FUNC) &_mvnbart4_cppbart, 18},
     {"_mvnbart4_cppbart_CLASS", (DL_FUNC) &_mvnbart4_cppbart_CLASS, 13},
     {NULL, NULL, 0}

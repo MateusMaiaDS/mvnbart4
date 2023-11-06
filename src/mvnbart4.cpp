@@ -60,40 +60,37 @@ double log_dmvn(arma::vec& x, arma::mat& Sigma){
 };
 
 
-// === Slow version but matches with THE R code // maybe can be slightly improved===
-//[[Rcpp::export]]
-double log_mvn_post_cor_sample(arma::mat y_hat_, // The number of observations are the column
-                               arma::mat y_mat_,
-                               arma::vec& sigmas,int d,
-                               arma::vec& sigmas_0){
-
-        // Defining some quantities;
-        double likelihood_term = 0.0;
-        // int n_sigma_ = (d*(d-1))/2;
-        arma::mat Sigma_= makeSigma(sigmas,d);
-        arma::mat res_ = (y_mat_-y_hat_).t();
-        // cout << "Nrows: " << res_.n_rows << endl;
-        for(int ii = 0; ii < res_.n_cols; ii++){
-                arma::vec aux_res_ = res_.col(ii);
-                likelihood_term = likelihood_term +  arma::as_scalar(aux_res_.t()*arma::inv(Sigma_)*aux_res_);
-        }
-
-        arma::mat Sigma_0_(d, d, arma::fill::eye);
-        arma::vec sigmas_diff = (sigmas-sigmas_0);
-
-        return -0.5*y_mat_.n_rows*log(det(Sigma_))-0.5*likelihood_term - 0.5*arma::as_scalar(sigmas_diff.t()*arma::inv(Sigma_0_)*sigmas_diff);
-
-
-        // return likelihood_term;
-
-
-};
-
-
-// // Creating the optim function for the correlation sampler
-// class LogOptimPost : public Functor {
-// public:
+// // === Slow version but matches with THE R code // maybe can be slightly improved===
+// //[[Rcpp::export]]
+// double log_mvn_post_cor_sample(arma::mat y_hat_, // The number of observations are the column
+//                                arma::mat y_mat_,
+//                                arma::vec& sigmas,int d,
+//                                arma::vec& sigmas_0){
+//
+//         // Defining some quantities;
+//         double likelihood_term = 0.0;
+//         // int n_sigma_ = (d*(d-1))/2;
+//         arma::mat Sigma_= makeSigma(sigmas,d);
+//         arma::mat res_ = (y_mat_-y_hat_).t();
+//         // cout << "Nrows: " << res_.n_rows << endl;
+//         for(int ii = 0; ii < res_.n_cols; ii++){
+//                 arma::vec aux_res_ = res_.col(ii);
+//                 likelihood_term = likelihood_term +  arma::as_scalar(aux_res_.t()*arma::inv(Sigma_)*aux_res_);
+//         }
+//
+//         arma::mat Sigma_0_(d, d, arma::fill::eye);
+//         arma::vec sigmas_diff = (sigmas-sigmas_0);
+//
+//         return -0.5*y_mat_.n_rows*log(det(Sigma_))-0.5*likelihood_term - 0.5*arma::as_scalar(sigmas_diff.t()*arma::inv(Sigma_0_)*sigmas_diff);
+//
+//
+//         // return likelihood_term;
+//
+//
 // };
+
+
+
 
 // //[[Rcpp::export]]
 arma::mat sum_exclude_col(arma::mat mat, int exclude_int){

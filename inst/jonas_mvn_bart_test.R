@@ -1,7 +1,7 @@
 # install.packages("devtools")
 rm(list=ls())
 # devtools::install_github("MateusMaiaDS/mvnbart3")
-devtools::load_all()
+# devtools::load_all()
 
 library(BART)
 library(mvnbart3)
