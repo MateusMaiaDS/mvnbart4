@@ -27,7 +27,7 @@ makeSigma <- function(sigma, d){
 }
 
 # Simluating Residuals
-n <- 200
+n <- 100
 d <- 3
 
 sigma_true <- c(0.5,0.1,-0.1) # must be of length (d^2 - d)/2
@@ -53,10 +53,17 @@ y_mat_ <- resid
 y_hat_ <- matrix(0,nrow = nrow(y_mat_),ncol = ncol(y_mat_))
 n_mcmc <- 2000
 
+# Hacky way to set an initial value?
+if(d==3){
+     sigma_init <- c(cor(resid[,1],resid[,2]),cor(resid[,3],resid[,1]),cor(resid[,2],resid[,3]))
+} else{
+     sigma_init <- sigma0
+}
+
 sigma_post <- sigma_sampler(nmcmc = n_mcmc,
               d = d,
               sigma_0 = sigma0,
-              sigma_init_optim = sigma0+0.4,
+              sigma_init_optim = sigma_init,
               y_mat = y_mat_,
               y_hat = y_hat_,df = df_,Sigma_0 = Sigma0)
 
