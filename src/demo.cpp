@@ -164,18 +164,44 @@ arma::vec sigma_draw_cpp(int d,
 
 }
 
+arma::vec makeSigmaInit(arma::mat Sigma, int d) {
+        arma::mat indices(d * (d - 1) / 2, 2);
+        int k = 0;
+        for (int i = 0; i < d; i++) {
+                for (int j = i + 1; j < d; j++) {
+                        indices(k, 0) = i + 1;
+                        indices(k, 1) = j + 1;
+                        k++;
+                }
+        }
+
+        arma::vec sigma(d * (d - 1) / 2);
+        for (int i = 0; i < d * (d - 1) / 2; i++) {
+                sigma(i) = Sigma(indices(i, 0) - 1, indices(i, 1) - 1);
+        }
+
+        return sigma;
+}
+
 //[[Rcpp::export]]
 arma::mat sigma_sampler(int nmcmc,
                         int d,
                         arma::vec sigma_0,
                         arma::mat Sigma_0,
-                        arma::vec sigma_init_optim,
                         arma::mat y_mat,
                         arma::mat y_hat,
                         double df){
 
         arma::mat sigma_post((d*d-d)/2,nmcmc,arma::fill::zeros);
         sigma_post.col(0) = sigma_0;
+
+        arma::mat resid_(d,d);
+        resid_= arma::cor((y_mat-y_hat));
+        arma::vec sigma_init_optim;
+        sigma_init_optim = makeSigmaInit(resid_,d);
+
+        // Checking the initial values
+        // arma::cout << sigma_init_optim << arma::endl;
 
         if(sigma_init_optim.size()!=(d*d-d)/2){
                 Rcpp::stop("Insert a valid sigma initialisation");
@@ -215,5 +241,7 @@ arma::mat sigma_sampler(int nmcmc,
         // Returning the posterior
         return sigma_post;
 }
+
+
 
 

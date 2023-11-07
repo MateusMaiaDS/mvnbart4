@@ -27,7 +27,7 @@ makeSigma <- function(sigma, d){
 }
 
 # Simluating Residuals
-n <- 100
+n <- 500
 d <- 3
 
 sigma_true <- c(0.8,0.3,-0.1) # must be of length (d^2 - d)/2
@@ -43,9 +43,9 @@ for (i in 1:n){
 
 
 # Setting the initial values
-sigma0 <- rep(0.0, (d^2 - d)/2) +0.1
+sigma0 <- rep(0.0, (d^2 - d)/2)
 Sigma0 <- makeSigma(sigma0,(d*d-d)*0.5)
-diag(Sigma0) <- rep(0.5, nrow(Sigma0))
+diag(Sigma0) <- rep(1, nrow(Sigma0))
 df_ <- 5
 
 #Just to auxiliar I gonna define y_mat as the residuals and y_hat as the zero matrix
@@ -63,7 +63,7 @@ if(d==3){
 sigma_post <- sigma_sampler(nmcmc = n_mcmc,
               d = d,
               sigma_0 = sigma0,
-              sigma_init_optim = sigma_init,
+              # sigma_init_optim = sigma_init,
               y_mat = y_mat_,
               y_hat = y_hat_,df = df_,Sigma_0 = Sigma0)
 
