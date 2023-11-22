@@ -10,6 +10,7 @@ using namespace std;
 // =====================================
 
 // Function to create a correlation matrix from correlation coefficients
+//[[Rcpp::export]]
 arma::mat makeSigma(arma::vec sigma, int d) {
 
         // Checking the inputs
@@ -31,6 +32,85 @@ arma::mat makeSigma(arma::vec sigma, int d) {
         return Sigma;
 }
 
+// [[Rcpp::export]]
+arma::vec makeSigmaInv(arma::mat& Sigma) {
+        int d = Sigma.n_rows;
+        arma::vec sigma((d * (d - 1)) / 2);
+
+        int k = 0;
+        for (int j = 0; j < d; j++) {
+                for (int i = j + 1; i < d; i++) {
+                        sigma(k++) = Sigma(i, j);
+                }
+        }
+
+        return sigma;
+}
+
+// double log_prior_dens(arma::mat R,
+//                       arma::mat D,
+//                       double nu){
+//
+//         unsigned int d = D.n_cols;
+//         arma::mat W = sqrt(D)*R*sqrt(D);
+//         return arma::dWi
+// }
+
+
+
+double multivariate_gamma(double nu, int p) {
+        double result = 1.0;
+        for (int i = 1; i <= p; ++i) {
+                result *= tgamma((nu + 1 - i) / 2);
+        }
+        return std::pow(arma::datum::pi, p * (p - 1) / 4) * result;
+}
+
+// Function to calculate the log-likelihood of Wishart distribution
+// [[Rcpp::export]]
+double wishart_loglikelihood(const arma::mat& X, const arma::mat& Sigma, double nu) {
+        int p = X.n_rows;  // Dimensionality
+        double logdet_X = arma::log_det(X).real();  // Log determinant of X
+        double logdet_Sigma = arma::log_det(Sigma).real();  // Log determinant of Sigma
+        double trace_invXSigma = arma::trace(arma::inv(Sigma) * X);
+
+        double log_likelihood = 0.5*(nu - p - 1)  * logdet_X - 0.5 * trace_invXSigma - (nu * 0.5) * logdet_Sigma - (nu * p * 0.5 ) * log(2.0) - log(multivariate_gamma(nu,p));
+
+        return log_likelihood;
+}
+
+double log_prior_dens(const arma::mat & R, const arma::mat & D, double nu){
+        unsigned int d = D.n_cols;
+        arma::mat sqrt_D = sqrt(D);
+        arma::mat W = sqrt_D*R*sqrt_D;
+        return wishart_loglikelihood(W,arma::eye(d,d),nu+d-1) +  trace(log(D));
+}
+double log_posterior_dens(const arma::mat & R, const arma::mat & D, double nu,
+                          const arma::mat & Z, bool sample_prior){
+        if(sample_prior){
+                return log_prior_dens(R,D,nu);
+        } else {
+                double n_ = Z.n_rows;
+                double log_prior_dummy = 0.0;
+                log_prior_dummy = log_prior_dens(R,D,nu)-0.5*n_*arma::log_det(R).real();
+                arma::mat inv_R = arma::inv(R);
+                for(unsigned int i =0 ; i < Z.n_rows ; i++) {
+                        log_prior_dummy = log_prior_dummy + arma::as_scalar(Z.row(i)*inv_R*Z.row(i));
+                }
+                return log_prior_dummy;
+        }
+}
+
+double log_proposal_dens(const arma::mat & R_star, const arma::mat & D_star, double nu,
+                         const arma::mat R, const arma::mat D, int m) {
+
+        arma::mat sqrt_D_star = sqrt(D_star);
+        arma::mat sqrt_D  = sqrt(D);
+        arma::mat W_star = sqrt_D_star*R_star*sqrt_D_star;
+        arma::mat W = sqrt_D*R*sqrt_D;
+        double  d = D.n_cols;
+        return wishart_loglikelihood(W_star, m * W, nu) + (0.5*(d-1))*arma::trace(log(D_star));
+}
 
 
 // Function to calculate the log of a MVN distribution
