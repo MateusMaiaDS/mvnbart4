@@ -91,9 +91,14 @@ A <- rWishart(1, 10, diag(4))[, , 1]
 dWishart(x = A, df = 10, Sigma = diag(4L), log = TRUE)
 wishart_loglikelihood(X = A,nu = 10,Sigma = diag(4L))
 dInvWishart(x = A, df = 10, Sigma = diag(4L), log = TRUE)
-iwishart_loglikelihood(X = A,nu = 10,Sigma = diag(4L))
+iwishart_loglikelihood(A,diag(4L),10)
 LaplacesDemon::dinvwishart(Sigma = A,nu = 10,S = diag(4L),log = TRUE)
 
+
+LaplacesDemon::dinvwishart(Sigma = W_star,nu = 200,S = 200*W,log = TRUE)
+iwishart_loglikelihood(W_star,S = 200*W,200)
+
+rInvWishart(n = 1,df = 200,Sigma = 200*Sigma_true)
 # sampler ####
 # if you want to sample from the prior, set sample_prior <- TRUE
 d <- 2

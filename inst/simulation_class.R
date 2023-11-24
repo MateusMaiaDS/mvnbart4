@@ -85,11 +85,12 @@ x_train <- data_train[,1:4]
 x_test <- data_test[,1:4]
 colnames(y_mat) <- c("C","Q")
 
-bart_mod <- mvnbart4(x_train = x_train,y_mat = y_mat,Sigma_init = diag(ncol(y_mat)),
-                     n_mcmc = 2000,n_burn = 0,df = 2,
+bart_mod <- mvnbart4(x_train = x_train,y_mat = y_mat,Sigma_init = Sigma,
+                     n_mcmc = 1000,n_burn = 0,df = 2,
                      x_test = x_test,n_tree = 50,
-                     node_min_size = 5,m = 200,update_Sigma = FALSE)
+                     node_min_size = 5,m = 200,update_Sigma = TRUE)
 
+# bart_mod$sigmas_post %>% plot(type = "l")
+# table(bart_mod$y_hat_test_mean_class[,1],data_test$C)
+# table(bart_mod$y_hat_test_mean_class[,2],data_test$Q)
 bart_mod$sigmas_post %>% plot(type = "l")
-table(bart_mod$y_hat_test_mean_class[,1],data_test$C)
-table(bart_mod$y_hat_test_mean_class[,2],data_test$Q)

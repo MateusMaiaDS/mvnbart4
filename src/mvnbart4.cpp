@@ -70,12 +70,14 @@ arma::vec makeSigmaInv(arma::mat& Sigma) {
 
 
 
-
+// I don't need to calculate this, they cancell out in the MH hasting
 double multivariate_gamma(double nu, int p) {
-        double result = 1.0;
+        double result = 0.0;
         for (int i = 1; i <= p; ++i) {
-                result *= tgamma((nu + 1 - i) / 2);
+                result += (lgamma((nu + 1 - i) / 2));
         }
+        result = exp(result);
+        // cout << "Is this stable??  "<< result << endl;
         return std::pow(arma::datum::pi, p * (p - 1) / 4) * result;
 }
 
@@ -99,7 +101,10 @@ double iwishart_loglikelihood(const arma::mat& X, const arma::mat& Sigma, double
         double logdet_Sigma = arma::log_det(Sigma).real();  // Log determinant of Sigma
         double trace_inv_Sigma_invX = arma::trace(Sigma * arma::inv(X));
 
-        double log_likelihood = -0.5*(nu + p + 1)  * logdet_X - 0.5 * trace_inv_Sigma_invX + (nu * 0.5) * logdet_Sigma - (nu * p * 0.5 ) * log(2.0) - log(multivariate_gamma(nu,p));
+
+        // THE FULL VERSION HAS A PROBLEM TO COMPUTE THE MULTIVARIATE GAMMA FUNCTION WHEN m is large, investigate that later
+        // double log_likelihood = -0.5*(nu + p + 1)  * logdet_X - 0.5 * trace_inv_Sigma_invX + (nu * 0.5) * logdet_Sigma - (nu * p * 0.5 ) * log(2.0) - log(multivariate_gamma(nu,p));
+        double log_likelihood = -0.5*(nu + p + 1)  * logdet_X - 0.5 * trace_inv_Sigma_invX + (nu * 0.5) * logdet_Sigma - (nu * p * 0.5 ) * log(2.0);// - log(multivariate_gamma(nu,p));
 
         return log_likelihood;
 }
@@ -107,8 +112,11 @@ double iwishart_loglikelihood(const arma::mat& X, const arma::mat& Sigma, double
 double log_prior_dens(const arma::mat & R, const arma::mat & D, double nu){
         unsigned int d = D.n_cols;
         arma::mat sqrt_D = sqrt(D);
+        // cout << "Sqrt_D" << sqrt_D << endl;
         arma::mat W = sqrt_D*R*sqrt_D;
-        return iwishart_loglikelihood(W,arma::eye(d,d),nu+d-1) +  ((d-1)*0.5)*trace(log(D));
+        // cout << "Wishhart density ::" << iwishart_loglikelihood(W,arma::eye(d,d),nu+d-1) << endl;
+        // cout << "Second term: " << ((d-1)*0.5)*sum(log(D.diag())) <<endl;
+        return iwishart_loglikelihood(W,arma::eye(d,d),nu+d-1) +  ((d-1)*0.5)*sum(log(D.diag()));
 }
 double log_posterior_dens(const arma::mat & R, const arma::mat & D, double nu,
                           const arma::mat & Z, bool sample_prior){
@@ -128,14 +136,18 @@ double log_posterior_dens(const arma::mat & R, const arma::mat & D, double nu,
 }
 
 double log_proposal_dens(const arma::mat & R_star, const arma::mat & D_star, double nu,
-                         const arma::mat R, const arma::mat D, unsigned int m) {
+                         const arma::mat& R, const arma::mat& D, int m) {
 
         arma::mat sqrt_D_star = sqrt(D_star);
         arma::mat sqrt_D  = sqrt(D);
         arma::mat W_star = sqrt_D_star*R_star*sqrt_D_star;
         arma::mat W = sqrt_D*R*sqrt_D;
+        // cout << "W VALUE:: "<< W << endl;
+        // cout << "W STAR VALUE:: "<< W_star << endl;
+
         double  d = D.n_cols;
-        return iwishart_loglikelihood(W_star, m * W, m) + (0.5*(d-1))*arma::trace(log(D_star));
+        // cout << "PROPOSAL DENS DEBUGG: " << iwishart_loglikelihood(W_star, m * W, m) << endl;
+        return iwishart_loglikelihood(W_star, m * W, m) + (0.5*(d-1))*sum(log(D_star.diag()));
 }
 
 
@@ -255,8 +267,8 @@ modelParam::modelParam(arma::mat x_train_,
         n_burn = n_burn_;
 
         // Generating the elements for the correlation matrix
-        R = arma::eye(y_mat_.n_cols,y_mat_.n_cols);
-        D = R;
+        R = Sigma_;
+        D = arma::eye(y_mat_.n_cols,y_mat_.n_cols);
         // Grow acceptation ratio
         move_proposal = arma::vec(3,arma::fill::zeros);
         move_acceptance = arma::vec(3,arma::fill::zeros);
@@ -1833,18 +1845,31 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                 // arma::cout << " D proposal dimensions " << D_proposal.n_rows << "x" << D_proposal.n_cols << arma::endl;
                 arma::mat inv_D_sqrt  = arma::inv(sqrt(D_proposal));
                 arma::mat R_proposal = inv_D_sqrt*W_proposal*inv_D_sqrt;
+                // arma::cout << R_proposal << endl;
                 // R_proposal.diag() = arma::ones(data.R.n_cols);
                 // if(R_proposal(0,0) != 1.0){
                 //         arma::cout << "CORRELATION VALUE: "<< std::setprecision(10) << (R_proposal(0,0) - 1.0) << std::endl;
                 //         throw std::range_error("Incorrect correlation matrix");
                 // }
+                // cout << "Part one: " << log_posterior_dens(R_proposal,D_proposal,nu,residuals_,false) << endl;
+                // cout << "Part two: " << log_posterior_dens(data.R,data.D,nu,residuals_,false) << endl;
+                // cout << "Part three: " << log_proposal_dens(data.R,data.D,nu,R_proposal,D_proposal,m) << endl;
+                // cout << "Part four: " << log_proposal_dens(R_proposal,D_proposal,nu,data.R,data.D,m) << endl;
 
-                double alpha_corr = exp(log_posterior_dens(R_proposal,D_proposal,nu,residuals_,false) - log_posterior_dens(data.R,data.D,nu,residuals_,false) + log_proposal_dens(data.R,data.D,nu,R_proposal,D_proposal,m) - log_proposal_dens(R_proposal,D_proposal,nu,data.R,data.D,m));
-                if(arma::randu(arma::distr_param(0.0,1.0)) < alpha_corr) {
+                double alpha_corr = exp(log_posterior_dens(R_proposal,D_proposal,nu,residuals_,false) -
+                                        log_posterior_dens(data.R,data.D,nu,residuals_,false) +
+                                        log_proposal_dens(data.R,data.D,nu,R_proposal,D_proposal,m) -
+                                        log_proposal_dens(R_proposal,D_proposal,nu,data.R,data.D,m));
+                double unif_sample = arma::randu(arma::distr_param(0.0,1.0));
+                // cout << "Uniform sample is: " << unif_sample << endl;
+                // cout << "Alpha sample is: " << alpha_corr << endl;
+
+                if( unif_sample < alpha_corr) {
                         data.R = R_proposal;
                         data.D = D_proposal;
+                        // arma::cout << "YEEE" << endl;
                         if(update_sigma){
-                                data.Sigma = data.R;
+                                data.Sigma = R_proposal;
                         }
                         // arma::cout << " Expressing Sigma(i,i): " << R_proposal.diag() << endl;
                 }  else {
