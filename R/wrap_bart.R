@@ -20,7 +20,8 @@ mvnbart4 <- function(x_train,
                   usequants = FALSE,
                   Sigma_init = NULL,
                   update_Sigma = TRUE,
-                  conditional_bool = TRUE
+                  conditional_bool = TRUE,
+                  m = 20 # Degrees of freed for the classification setting.
                   ) {
 
      # Verifying if it's been using a y_mat matrix
@@ -145,6 +146,7 @@ mvnbart4 <- function(x_train,
              }
              mu_init <- apply(y_mat,2,mean)
 
+             nu <- df
              # No extra parameters are need to calculate for the class model
      } else {
              # Getting the naive sigma value
@@ -196,7 +198,9 @@ mvnbart4 <- function(x_train,
                                  Sigma_init,
                                  mu_init,
                                  sigma_mu_j,
-                                 alpha,beta)
+                                 nu,
+                                 alpha,beta,
+                                 m)
      } else {
                 bart_obj <- cppbart(x_train_scale,
                                   y_mat,
@@ -252,7 +256,7 @@ mvnbart4 <- function(x_train,
                   y_hat_test_mean_class = apply(y_mat_test_mean,2,function(x){ifelse(x>0,1,0)}),
                   Sigma_post = Sigma_post,
                   Sigma_post_mean = Sigma_post_mean,
-                  sigmas_mean = sigmas_mean,
+                  sigmas_post = bart_obj[[7]],
                   all_Sigma_post = all_Sigma_post,
                   prior = list(n_tree = n_tree,
                                alpha = alpha,

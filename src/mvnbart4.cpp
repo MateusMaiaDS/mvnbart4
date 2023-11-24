@@ -9,6 +9,26 @@ using namespace std;
 // Statistics Function
 // =====================================
 
+arma::mat generateZ(int n, int d, const arma::mat& Sigma_true_chol) {
+        int i, j;
+
+        // Generate an n x d matrix to store the result
+        arma::mat Z(n, d);
+
+        for (i = 0; i < n; ++i) {
+                // Generate a d-dimensional random vector
+                arma::vec rnormVec = arma::randn(d);
+
+                // Multiply by the Cholesky decomposition
+                for (j = 0; j < d; ++j) {
+                        Z(i, j) = arma::dot(Sigma_true_chol.row(j), rnormVec);
+                }
+        }
+
+        return Z;
+}
+
+
 // Function to create a correlation matrix from correlation coefficients
 //[[Rcpp::export]]
 arma::mat makeSigma(arma::vec sigma, int d) {
@@ -79,11 +99,23 @@ double wishart_loglikelihood(const arma::mat& X, const arma::mat& Sigma, double 
         return log_likelihood;
 }
 
+// [[Rcpp::export]]
+double iwishart_loglikelihood(const arma::mat& X, const arma::mat& Sigma, double nu) {
+        int p = X.n_rows;  // Dimensionality
+        double logdet_X = arma::log_det(X).real();  // Log determinant of X
+        double logdet_Sigma = arma::log_det(Sigma).real();  // Log determinant of Sigma
+        double trace_inv_Sigma_invX = arma::trace(Sigma * arma::inv(X));
+
+        double log_likelihood = -0.5*(nu + p + 1)  * logdet_X - 0.5 * trace_inv_Sigma_invX + (nu * 0.5) * logdet_Sigma - (nu * p * 0.5 ) * log(2.0) - log(multivariate_gamma(nu,p));
+
+        return log_likelihood;
+}
+
 double log_prior_dens(const arma::mat & R, const arma::mat & D, double nu){
         unsigned int d = D.n_cols;
         arma::mat sqrt_D = sqrt(D);
         arma::mat W = sqrt_D*R*sqrt_D;
-        return wishart_loglikelihood(W,arma::eye(d,d),nu+d-1) +  trace(log(D));
+        return wishart_loglikelihood(W,arma::eye(d,d),nu+d-1) +  ((d-1))*0.5*trace(log(D));
 }
 double log_posterior_dens(const arma::mat & R, const arma::mat & D, double nu,
                           const arma::mat & Z, bool sample_prior){
@@ -94,22 +126,23 @@ double log_posterior_dens(const arma::mat & R, const arma::mat & D, double nu,
                 double log_prior_dummy = 0.0;
                 log_prior_dummy = log_prior_dens(R,D,nu)-0.5*n_*arma::log_det(R).real();
                 arma::mat inv_R = arma::inv(R);
+                // arma::cout << "invR dimensions: " << inv_R.n_rows << " x " << inv_R.n_cols;
                 for(unsigned int i =0 ; i < Z.n_rows ; i++) {
-                        log_prior_dummy = log_prior_dummy + arma::as_scalar(Z.row(i)*inv_R*Z.row(i));
+                        log_prior_dummy = log_prior_dummy - 0.5*arma::as_scalar(Z.row(i)*inv_R*Z.row(i).t());
                 }
                 return log_prior_dummy;
         }
 }
 
 double log_proposal_dens(const arma::mat & R_star, const arma::mat & D_star, double nu,
-                         const arma::mat R, const arma::mat D, int m) {
+                         const arma::mat R, const arma::mat D, unsigned int m) {
 
         arma::mat sqrt_D_star = sqrt(D_star);
         arma::mat sqrt_D  = sqrt(D);
         arma::mat W_star = sqrt_D_star*R_star*sqrt_D_star;
         arma::mat W = sqrt_D*R*sqrt_D;
         double  d = D.n_cols;
-        return wishart_loglikelihood(W_star, m * W, nu) + (0.5*(d-1))*arma::trace(log(D_star));
+        return iwishart_loglikelihood(W_star, m * W, nu) + (0.5*(d-1))*arma::trace(log(D_star));
 }
 
 
@@ -228,6 +261,9 @@ modelParam::modelParam(arma::mat x_train_,
         n_mcmc = n_mcmc_;
         n_burn = n_burn_;
 
+        // Generating the elements for the correlation matrix
+        R = arma::eye(y_mat_.n_cols,y_mat_.n_cols);
+        D = R;
         // Grow acceptation ratio
         move_proposal = arma::vec(3,arma::fill::zeros);
         move_acceptance = arma::vec(3,arma::fill::zeros);
@@ -1464,7 +1500,7 @@ double up_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double lower, doub
         arma::mat z_mj_hat = mean_mat_;
         z_mj.shed_col(j_);
         z_mj_hat.shed_col(j_);
-        double mean_ = mean_mat_(i_,j_) + arma::as_scalar(Sigma_mj_j_*Sigma_mj_mj_inv_*(z_mj.row(i_)-(z_mj_hat.row(i_)))); // Old version
+        double mean_ = mean_mat_(i_,j_) + arma::as_scalar(Sigma_mj_j_*Sigma_mj_mj_inv_*(z_mj.row(i_)-z_mj_hat.row(i_))); // Old version
 
         while(sample_bool){
 
@@ -1555,7 +1591,9 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                    arma::mat Sigma_init,
                    arma::vec mu_init,
                    arma::vec sigma_mu,
-                   double alpha, double beta){
+                   double nu,
+                   double alpha, double beta,
+                   unsigned int m){
 
         // Posterior counter
         int curr = 0;
@@ -1563,7 +1601,6 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
         // Creating a dummy object for the S_0 wish and A_j
         arma::mat S_0_wish = arma::mat(y_mat.n_cols,y_mat.n_cols,arma::fill::zeros);
         arma::vec A_j_vec = arma::vec(y_mat.n_cols,arma::fill::zeros);
-        double nu = 3.0;
         // cout << " Error on model.param" << endl;
         // Creating the structu object
         modelParam data(x_train,
@@ -1592,7 +1629,7 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
         arma::cube y_test_hat_post(data.x_test.n_rows,data.y_mat.n_cols,n_post,arma::fill::zeros);
         arma::cube Sigma_post(data.Sigma.n_rows,data.Sigma.n_cols,n_post,arma::fill::zeros);
         arma::cube all_Sigma_post(data.Sigma.n_rows,data.Sigma.n_cols,n_mcmc,arma::fill::zeros);
-
+        arma::mat correlation_matrix_post(n_mcmc,0.5*data.Sigma.n_cols*(data.Sigma.n_cols-1));
         // Rcpp::Rcout << "error here2" << endl;
 
         // =====================================
@@ -1713,7 +1750,8 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
 
                         double v = Sigma_j_j - arma::as_scalar(Sigma_j_mj*Sigma_mj_mj_inv*Sigma_mj_j);
                         data.v_j = v;
-                        // cout << " Variance term: " << data.v_j << endl;
+                        // cout << "Sigma_jj: " << Sigma_mj_mj_inv<< endl;
+                        cout << " Variance term: " << data.R(0,1) << endl;
 
                         data.sigma_mu_j = data.sigma_mu(j);
 
@@ -1787,13 +1825,43 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
 
                 }// End of iterations over "j"
 
+                arma::mat residuals_ = y_mat_hat-z_mat_train;
+                // arma::mat residuals_ = generateZ(y_mat.n_rows,y_mat.n_cols,Sigma_init);
+                // arma::mat residuals_ = z_mat_train;
+                // Updating the Sigma
+                // arma::cout  << " Error here on the first update:" << m << endl;
+                // arma::cout << " R dimensions " << data.R.n_rows << "x" << data.R.n_cols << arma::endl;
+                arma::mat D_sqrt = sqrt(data.D);
+                data.W = D_sqrt*data.R*D_sqrt;
+                arma::mat W_proposal = arma::iwishrnd(m*data.W,m);
+                arma::mat D_proposal = arma::diagmat(W_proposal);
+                // arma::cout << D_proposal << endl;
+                // arma::cout << " D proposal dimensions " << D_proposal.n_rows << "x" << D_proposal.n_cols << arma::endl;
+                arma::mat inv_D_sqrt  = arma::inv(sqrt(D_proposal));
+                arma::mat R_proposal = inv_D_sqrt*W_proposal*inv_D_sqrt;
+                // R_proposal.diag() = arma::ones(data.R.n_cols);
+                // if(R_proposal(0,0) != 1.0){
+                //         arma::cout << "CORRELATION VALUE: "<< std::setprecision(10) << (R_proposal(0,0) - 1.0) << std::endl;
+                //         throw std::range_error("Incorrect correlation matrix");
+                // }
+
+                double alpha_corr = exp(log_posterior_dens(R_proposal,D_proposal,nu,residuals_,false) - log_posterior_dens(data.R,data.D,nu,residuals_,false) + log_proposal_dens(data.R,data.D,nu,R_proposal,D_proposal,m) - log_proposal_dens(R_proposal,D_proposal,nu,data.R,data.D,m));
+                if(arma::randu(arma::distr_param(0.0,1.0)) < alpha_corr) {
+                        data.R = R_proposal;
+                        data.D = D_proposal;
+                        // data.Sigma = data.R;
+                        // arma::cout << " Expressing Sigma(i,i): " << R_proposal.diag() << endl;
+                }  else {
+                        // data.Sigma = data.R;
+                }
 
                 // std::cout << " All good " << endl;
                 if(i >= n_burn){
                         // Storing the predictions
                         y_train_hat_post.slice(curr) = y_mat_hat;
                         y_test_hat_post.slice(curr) = y_mat_test_hat;
-                        Sigma_post.slice(curr) = data.Sigma;
+                        Sigma_post.slice(curr) = data.R;
+                        correlation_matrix_post.row(curr) = makeSigmaInv(data.R);
                         curr++;
                 }
 
@@ -1822,7 +1890,8 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                                   Sigma_post, //[3]
                                   all_Sigma_post, // [4]
                                   data.move_proposal, // [5]
-                                  data.move_acceptance //[6]
+                                  data.move_acceptance, //[6]
+                                  correlation_matrix_post // [7]
         );
 }
 

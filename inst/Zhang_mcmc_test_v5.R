@@ -71,17 +71,11 @@ log_proposal_dens <- function(R_star, D_star, R, D, m){
 }
 
 # wishart_loglikelihood(X = Sigma_true,nu = 3,Sigma = Sigma_true)
-dWishart(x = Sigma_true,df = 3,Sigma = Sigma_true,log = TRUE)
-wishart_loglikelihood_inv(X = Sigma_true,nu = 3,Sigma = Sigma_true)
-
-A <- rWishart(1, 10, diag(4))[, , 1]
-dWishart(x = A, df = 10, Sigma = diag(4L), log = TRUE)
-wishart_loglikelihood(X = A,nu = 10,Sigma = diag(4L))
 
 # simulate data
 n <- 50
-d <- 3
-sigma_true <- c(0.1,0.125,-0.822) # must be of length (d^2 - d)/2
+d <- 2
+sigma_true <- c(0.1) # must be of length (d^2 - d)/2
 Sigma_true <- makeSigma(sigma_true, d)
 min(eigen(Sigma_true)$value) # must be > 0
 Sigma_true_chol <- t(chol(Sigma_true))
@@ -91,13 +85,22 @@ for (i in 1:n){
   Z[i,] <- Sigma_true_chol %*% rnorm(d)
 }
 
+dWishart(x = Sigma_true,df = 3,Sigma = Sigma_true,log = TRUE)
+
+A <- rWishart(1, 10, diag(4))[, , 1]
+dWishart(x = A, df = 10, Sigma = diag(4L), log = TRUE)
+wishart_loglikelihood(X = A,nu = 10,Sigma = diag(4L))
+dInvWishart(x = A, df = 10, Sigma = diag(4L), log = TRUE)
+iwishart_loglikelihood(X = A,nu = 10,Sigma = diag(4L))
+LaplacesDemon::dinvwishart(Sigma = A,nu = 10,S = diag(4L),log = TRUE)
+
 # sampler ####
 # if you want to sample from the prior, set sample_prior <- TRUE
-d <- 3
+d <- 2
 n_mcmc <- 10000
 sample_prior <- FALSE
 nu <- 2
-m <- 500 # degrees of freedom for proposal distribution; must be > d. Large m leads to smaller jumps and higher acceptance rates
+m <- 200 # degrees of freedom for proposal distribution; must be > d. Large m leads to smaller jumps and higher acceptance rates
 pb <- progress_bar$new(total = n_mcmc)
 R_samples <- list()
 D_samples <- list()

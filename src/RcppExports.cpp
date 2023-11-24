@@ -11,49 +11,52 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// log_mvn_post_cor_sample
-double log_mvn_post_cor_sample(arma::mat y_hat_, arma::mat y_mat_, arma::vec& sigmas, int d, arma::vec& sigmas_0);
-RcppExport SEXP _mvnbart4_log_mvn_post_cor_sample(SEXP y_hat_SEXP, SEXP y_mat_SEXP, SEXP sigmasSEXP, SEXP dSEXP, SEXP sigmas_0SEXP) {
+// makeSigma
+arma::mat makeSigma(arma::vec sigma, int d);
+RcppExport SEXP _mvnbart4_makeSigma(SEXP sigmaSEXP, SEXP dSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type y_hat_(y_hat_SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type y_mat_(y_mat_SEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type sigmas(sigmasSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type sigma(sigmaSEXP);
     Rcpp::traits::input_parameter< int >::type d(dSEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type sigmas_0(sigmas_0SEXP);
-    rcpp_result_gen = Rcpp::wrap(log_mvn_post_cor_sample(y_hat_, y_mat_, sigmas, d, sigmas_0));
+    rcpp_result_gen = Rcpp::wrap(makeSigma(sigma, d));
     return rcpp_result_gen;
 END_RCPP
 }
-// sigma_draw_cpp
-arma::vec sigma_draw_cpp(int d, arma::vec sigma_0, arma::mat y_mat, arma::mat y_hat, double df);
-RcppExport SEXP _mvnbart4_sigma_draw_cpp(SEXP dSEXP, SEXP sigma_0SEXP, SEXP y_matSEXP, SEXP y_hatSEXP, SEXP dfSEXP) {
+// makeSigmaInv
+arma::vec makeSigmaInv(arma::mat& Sigma);
+RcppExport SEXP _mvnbart4_makeSigmaInv(SEXP SigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type d(dSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type sigma_0(sigma_0SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type y_mat(y_matSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type y_hat(y_hatSEXP);
-    Rcpp::traits::input_parameter< double >::type df(dfSEXP);
-    rcpp_result_gen = Rcpp::wrap(sigma_draw_cpp(d, sigma_0, y_mat, y_hat, df));
+    Rcpp::traits::input_parameter< arma::mat& >::type Sigma(SigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(makeSigmaInv(Sigma));
     return rcpp_result_gen;
 END_RCPP
 }
-// sigma_sampler
-arma::mat sigma_sampler(int nmcmc, int d, arma::vec sigma_0, arma::mat y_mat, arma::mat y_hat, double df);
-RcppExport SEXP _mvnbart4_sigma_sampler(SEXP nmcmcSEXP, SEXP dSEXP, SEXP sigma_0SEXP, SEXP y_matSEXP, SEXP y_hatSEXP, SEXP dfSEXP) {
+// wishart_loglikelihood
+double wishart_loglikelihood(const arma::mat& X, const arma::mat& Sigma, double nu);
+RcppExport SEXP _mvnbart4_wishart_loglikelihood(SEXP XSEXP, SEXP SigmaSEXP, SEXP nuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type nmcmc(nmcmcSEXP);
-    Rcpp::traits::input_parameter< int >::type d(dSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type sigma_0(sigma_0SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type y_mat(y_matSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type y_hat(y_hatSEXP);
-    Rcpp::traits::input_parameter< double >::type df(dfSEXP);
-    rcpp_result_gen = Rcpp::wrap(sigma_sampler(nmcmc, d, sigma_0, y_mat, y_hat, df));
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(wishart_loglikelihood(X, Sigma, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// iwishart_loglikelihood
+double iwishart_loglikelihood(const arma::mat& X, const arma::mat& Sigma, double nu);
+RcppExport SEXP _mvnbart4_iwishart_loglikelihood(SEXP XSEXP, SEXP SigmaSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(iwishart_loglikelihood(X, Sigma, nu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -98,8 +101,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // cppbart_CLASS
-Rcpp::List cppbart_CLASS(arma::mat x_train, arma::mat y_mat, arma::mat x_test, arma::mat x_cut, int n_tree, int node_min_size, int n_mcmc, int n_burn, arma::mat Sigma_init, arma::vec mu_init, arma::vec sigma_mu, double alpha, double beta);
-RcppExport SEXP _mvnbart4_cppbart_CLASS(SEXP x_trainSEXP, SEXP y_matSEXP, SEXP x_testSEXP, SEXP x_cutSEXP, SEXP n_treeSEXP, SEXP node_min_sizeSEXP, SEXP n_mcmcSEXP, SEXP n_burnSEXP, SEXP Sigma_initSEXP, SEXP mu_initSEXP, SEXP sigma_muSEXP, SEXP alphaSEXP, SEXP betaSEXP) {
+Rcpp::List cppbart_CLASS(arma::mat x_train, arma::mat y_mat, arma::mat x_test, arma::mat x_cut, int n_tree, int node_min_size, int n_mcmc, int n_burn, arma::mat Sigma_init, arma::vec mu_init, arma::vec sigma_mu, double nu, double alpha, double beta, unsigned int m);
+RcppExport SEXP _mvnbart4_cppbart_CLASS(SEXP x_trainSEXP, SEXP y_matSEXP, SEXP x_testSEXP, SEXP x_cutSEXP, SEXP n_treeSEXP, SEXP node_min_sizeSEXP, SEXP n_mcmcSEXP, SEXP n_burnSEXP, SEXP Sigma_initSEXP, SEXP mu_initSEXP, SEXP sigma_muSEXP, SEXP nuSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP mSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -114,20 +117,23 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type Sigma_init(Sigma_initSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type mu_init(mu_initSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type sigma_mu(sigma_muSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
-    rcpp_result_gen = Rcpp::wrap(cppbart_CLASS(x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, alpha, beta));
+    Rcpp::traits::input_parameter< unsigned int >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(cppbart_CLASS(x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, nu, alpha, beta, m));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_mvnbart4_log_mvn_post_cor_sample", (DL_FUNC) &_mvnbart4_log_mvn_post_cor_sample, 5},
-    {"_mvnbart4_sigma_draw_cpp", (DL_FUNC) &_mvnbart4_sigma_draw_cpp, 5},
-    {"_mvnbart4_sigma_sampler", (DL_FUNC) &_mvnbart4_sigma_sampler, 6},
+    {"_mvnbart4_makeSigma", (DL_FUNC) &_mvnbart4_makeSigma, 2},
+    {"_mvnbart4_makeSigmaInv", (DL_FUNC) &_mvnbart4_makeSigmaInv, 1},
+    {"_mvnbart4_wishart_loglikelihood", (DL_FUNC) &_mvnbart4_wishart_loglikelihood, 3},
+    {"_mvnbart4_iwishart_loglikelihood", (DL_FUNC) &_mvnbart4_iwishart_loglikelihood, 3},
     {"_mvnbart4_log_dmvn", (DL_FUNC) &_mvnbart4_log_dmvn, 2},
     {"_mvnbart4_cppbart", (DL_FUNC) &_mvnbart4_cppbart, 18},
-    {"_mvnbart4_cppbart_CLASS", (DL_FUNC) &_mvnbart4_cppbart_CLASS, 13},
+    {"_mvnbart4_cppbart_CLASS", (DL_FUNC) &_mvnbart4_cppbart_CLASS, 15},
     {NULL, NULL, 0}
 };
 

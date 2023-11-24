@@ -22,6 +22,9 @@ struct modelParam {
         arma::mat S_0_wish;
         arma::vec a_j_vec;
         arma::vec A_j_vec;
+        arma::mat W;
+        arma::mat R;
+        arma::mat D;
 
         double nu;
         int node_min_size;
