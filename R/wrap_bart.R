@@ -200,7 +200,7 @@ mvnbart4 <- function(x_train,
                                  sigma_mu_j,
                                  nu,
                                  alpha,beta,
-                                 m)
+                                 m,update_Sigma)
      } else {
                 bart_obj <- cppbart(x_train_scale,
                                   y_mat,

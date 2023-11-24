@@ -67,14 +67,7 @@ arma::vec makeSigmaInv(arma::mat& Sigma) {
         return sigma;
 }
 
-// double log_prior_dens(arma::mat R,
-//                       arma::mat D,
-//                       double nu){
-//
-//         unsigned int d = D.n_cols;
-//         arma::mat W = sqrt(D)*R*sqrt(D);
-//         return arma::dWi
-// }
+
 
 
 
@@ -115,7 +108,7 @@ double log_prior_dens(const arma::mat & R, const arma::mat & D, double nu){
         unsigned int d = D.n_cols;
         arma::mat sqrt_D = sqrt(D);
         arma::mat W = sqrt_D*R*sqrt_D;
-        return wishart_loglikelihood(W,arma::eye(d,d),nu+d-1) +  ((d-1))*0.5*trace(log(D));
+        return iwishart_loglikelihood(W,arma::eye(d,d),nu+d-1) +  ((d-1)*0.5)*trace(log(D));
 }
 double log_posterior_dens(const arma::mat & R, const arma::mat & D, double nu,
                           const arma::mat & Z, bool sample_prior){
@@ -142,7 +135,7 @@ double log_proposal_dens(const arma::mat & R_star, const arma::mat & D_star, dou
         arma::mat W_star = sqrt_D_star*R_star*sqrt_D_star;
         arma::mat W = sqrt_D*R*sqrt_D;
         double  d = D.n_cols;
-        return iwishart_loglikelihood(W_star, m * W, nu) + (0.5*(d-1))*arma::trace(log(D_star));
+        return iwishart_loglikelihood(W_star, m * W, m) + (0.5*(d-1))*arma::trace(log(D_star));
 }
 
 
@@ -1593,7 +1586,8 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                    arma::vec sigma_mu,
                    double nu,
                    double alpha, double beta,
-                   unsigned int m){
+                   unsigned int m,
+                   bool update_sigma){
 
         // Posterior counter
         int curr = 0;
@@ -1751,7 +1745,7 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                         double v = Sigma_j_j - arma::as_scalar(Sigma_j_mj*Sigma_mj_mj_inv*Sigma_mj_j);
                         data.v_j = v;
                         // cout << "Sigma_jj: " << Sigma_mj_mj_inv<< endl;
-                        cout << " Variance term: " << data.R(0,1) << endl;
+                        // cout << " Variance term: " << data.R(0,1) << endl;
 
                         data.sigma_mu_j = data.sigma_mu(j);
 
@@ -1849,10 +1843,14 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                 if(arma::randu(arma::distr_param(0.0,1.0)) < alpha_corr) {
                         data.R = R_proposal;
                         data.D = D_proposal;
-                        // data.Sigma = data.R;
+                        if(update_sigma){
+                                data.Sigma = data.R;
+                        }
                         // arma::cout << " Expressing Sigma(i,i): " << R_proposal.diag() << endl;
                 }  else {
-                        // data.Sigma = data.R;
+                        if(update_sigma){
+                                data.Sigma = data.R;
+                        }
                 }
 
                 // std::cout << " All good " << endl;

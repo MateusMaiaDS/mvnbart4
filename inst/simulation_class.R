@@ -21,12 +21,12 @@ f_true_Q <- function(X){
 # true covariance matrix for residuals
 sigma_c <- 1
 sigma_q <- 1
-rho <- 0.0
+rho <- 0.6
 Sigma <- matrix(c(sigma_c^2,sigma_c*sigma_q*rho,sigma_c*sigma_q*rho,sigma_q^2), nrow = 2)
 Sigma_chol <- t(chol(Sigma))
 
 # sample size
-N <- 150
+N <- 500
 
 data_train <- data.frame(X1 = rep(NA, N))
 data_train$X1 <- runif(N, -1, 1)
@@ -86,9 +86,9 @@ x_test <- data_test[,1:4]
 colnames(y_mat) <- c("C","Q")
 
 bart_mod <- mvnbart4(x_train = x_train,y_mat = y_mat,Sigma_init = diag(ncol(y_mat)),
-                     n_mcmc = 2000,n_burn = 0,df = 20,
+                     n_mcmc = 2000,n_burn = 0,df = 2,
                      x_test = x_test,n_tree = 50,
-                     node_min_size = 5,m = 50)
+                     node_min_size = 5,m = 200,update_Sigma = FALSE)
 
 bart_mod$sigmas_post %>% plot(type = "l")
 table(bart_mod$y_hat_test_mean_class[,1],data_test$C)

@@ -82,7 +82,7 @@ table(y_train[,1])
 table(y_train[,2])
 
 bart_mod <- mvnbart4(x_train = x_train,y_mat = y_train,Sigma_init = Sigma,
-                      n_mcmc = 2000,n_burn = 0,df = 50,
-                      x_test = x_test,n_tree = 10,
+                      n_mcmc = 2000,n_burn = 0,df = 2,
+                      x_test = x_test,n_tree = 50,
                       node_min_size = 5,m = 200)
 
