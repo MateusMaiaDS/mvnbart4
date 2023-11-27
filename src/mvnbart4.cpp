@@ -1831,53 +1831,54 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
 
                 }// End of iterations over "j"
 
-                arma::mat residuals_ = y_mat_hat-z_mat_train;
-                // arma::mat residuals_ = generateZ(y_mat.n_rows,y_mat.n_cols,Sigma_init);
-                // arma::mat residuals_ = z_mat_train;
-                // Updating the Sigma
-                // arma::cout  << " Error here on the first update:" << m << endl;
-                // arma::cout << " R dimensions " << data.R.n_rows << "x" << data.R.n_cols << arma::endl;
-                arma::mat D_sqrt = sqrt(data.D);
-                data.W = D_sqrt*data.R*D_sqrt;
-                arma::mat W_proposal = arma::iwishrnd(m*data.W,m);
-                arma::mat D_proposal = arma::diagmat(W_proposal);
-                // arma::cout << D_proposal << endl;
-                // arma::cout << " D proposal dimensions " << D_proposal.n_rows << "x" << D_proposal.n_cols << arma::endl;
-                arma::mat inv_D_sqrt  = arma::inv(sqrt(D_proposal));
-                arma::mat R_proposal = inv_D_sqrt*W_proposal*inv_D_sqrt;
-                // arma::cout << R_proposal << endl;
-                // R_proposal.diag() = arma::ones(data.R.n_cols);
-                // if(R_proposal(0,0) != 1.0){
-                //         arma::cout << "CORRELATION VALUE: "<< std::setprecision(10) << (R_proposal(0,0) - 1.0) << std::endl;
-                //         throw std::range_error("Incorrect correlation matrix");
-                // }
-                // cout << "Part one: " << log_posterior_dens(R_proposal,D_proposal,nu,residuals_,false) << endl;
-                // cout << "Part two: " << log_posterior_dens(data.R,data.D,nu,residuals_,false) << endl;
-                // cout << "Part three: " << log_proposal_dens(data.R,data.D,nu,R_proposal,D_proposal,m) << endl;
-                // cout << "Part four: " << log_proposal_dens(R_proposal,D_proposal,nu,data.R,data.D,m) << endl;
+                if(update_sigma){
+                        arma::mat residuals_ = y_mat_hat-z_mat_train;
+                        // arma::mat residuals_ = generateZ(y_mat.n_rows,y_mat.n_cols,Sigma_init);
+                        // arma::mat residuals_ = z_mat_train;
+                        // Updating the Sigma
+                        // arma::cout  << " Error here on the first update:" << m << endl;
+                        // arma::cout << " R dimensions " << data.R.n_rows << "x" << data.R.n_cols << arma::endl;
+                        arma::mat D_sqrt = sqrt(data.D);
+                        data.W = D_sqrt*data.R*D_sqrt;
+                        arma::mat W_proposal = arma::iwishrnd(m*data.W,m);
+                        arma::mat D_proposal = arma::diagmat(W_proposal);
+                        // arma::cout << D_proposal << endl;
+                        // arma::cout << " D proposal dimensions " << D_proposal.n_rows << "x" << D_proposal.n_cols << arma::endl;
+                        arma::mat inv_D_sqrt  = arma::inv(sqrt(D_proposal));
+                        arma::mat R_proposal = inv_D_sqrt*W_proposal*inv_D_sqrt;
+                        // arma::cout << R_proposal << endl;
+                        // R_proposal.diag() = arma::ones(data.R.n_cols);
+                        // if(R_proposal(0,0) != 1.0){
+                        //         arma::cout << "CORRELATION VALUE: "<< std::setprecision(10) << (R_proposal(0,0) - 1.0) << std::endl;
+                        //         throw std::range_error("Incorrect correlation matrix");
+                        // }
+                        // cout << "Part one: " << log_posterior_dens(R_proposal,D_proposal,nu,residuals_,false) << endl;
+                        // cout << "Part two: " << log_posterior_dens(data.R,data.D,nu,residuals_,false) << endl;
+                        // cout << "Part three: " << log_proposal_dens(data.R,data.D,nu,R_proposal,D_proposal,m) << endl;
+                        // cout << "Part four: " << log_proposal_dens(R_proposal,D_proposal,nu,data.R,data.D,m) << endl;
 
-                double alpha_corr = exp(log_posterior_dens(R_proposal,D_proposal,nu,residuals_,false) -
-                                        log_posterior_dens(data.R,data.D,nu,residuals_,false) +
-                                        log_proposal_dens(data.R,data.D,nu,R_proposal,D_proposal,m) -
-                                        log_proposal_dens(R_proposal,D_proposal,nu,data.R,data.D,m));
-                double unif_sample = arma::randu(arma::distr_param(0.0,1.0));
-                // cout << "Uniform sample is: " << unif_sample << endl;
-                // cout << "Alpha sample is: " << alpha_corr << endl;
+                        double alpha_corr = exp(log_posterior_dens(R_proposal,D_proposal,nu,residuals_,false) -
+                                                log_posterior_dens(data.R,data.D,nu,residuals_,false) +
+                                                log_proposal_dens(data.R,data.D,nu,R_proposal,D_proposal,m) -
+                                                log_proposal_dens(R_proposal,D_proposal,nu,data.R,data.D,m));
+                        double unif_sample = arma::randu(arma::distr_param(0.0,1.0));
+                        // cout << "Uniform sample is: " << unif_sample << endl;
+                        // cout << "Alpha sample is: " << alpha_corr << endl;
 
-                if( unif_sample < alpha_corr) {
-                        data.R = R_proposal;
-                        data.D = D_proposal;
-                        // arma::cout << "YEEE" << endl;
-                        if(update_sigma){
-                                data.Sigma = R_proposal;
-                        }
-                        // arma::cout << " Expressing Sigma(i,i): " << R_proposal.diag() << endl;
-                }  else {
-                        if(update_sigma){
-                                data.Sigma = data.R;
+                        if( unif_sample < alpha_corr) {
+                                data.R = R_proposal;
+                                data.D = D_proposal;
+                                // arma::cout << "YEEE" << endl;
+                                if(update_sigma){
+                                        data.Sigma = R_proposal;
+                                }
+                                // arma::cout << " Expressing Sigma(i,i): " << R_proposal.diag() << endl;
+                        }  else {
+                                if(update_sigma){
+                                        data.Sigma = data.R;
+                                }
                         }
                 }
-
                 // std::cout << " All good " << endl;
                 if(i >= n_burn){
                         // Storing the predictions

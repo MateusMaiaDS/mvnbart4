@@ -88,7 +88,7 @@ colnames(y_mat) <- c("C","Q")
 bart_mod <- mvnbart4(x_train = x_train,y_mat = y_mat,Sigma_init = Sigma,
                      n_mcmc = 1000,n_burn = 0,df = 2,
                      x_test = x_test,n_tree = 50,
-                     node_min_size = 5,m = 200,update_Sigma = TRUE)
+                     node_min_size = 5,m = 200,update_Sigma = FALSE)
 
 # bart_mod$sigmas_post %>% plot(type = "l")
 # table(bart_mod$y_hat_test_mean_class[,1],data_test$C)
