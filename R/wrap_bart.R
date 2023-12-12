@@ -218,8 +218,7 @@ mvnbart4 <- function(x_train,
                                   alpha,beta,nu,
                                   S_0_wish,
                                   A_j,
-                                  update_Sigma,
-                                  conditional_bool)
+                                  update_Sigma)
      }
 
 
