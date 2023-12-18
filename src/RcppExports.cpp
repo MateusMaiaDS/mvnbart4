@@ -73,8 +73,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // cppbart
-Rcpp::List cppbart(arma::mat x_train, arma::mat y_mat, arma::mat x_test, arma::mat x_cut, int n_tree, int node_min_size, int n_mcmc, int n_burn, arma::mat Sigma_init, arma::vec mu_init, arma::vec sigma_mu, double alpha, double beta, double nu, arma::mat S_0_wish, arma::vec A_j_vec, bool update_Sigma);
-RcppExport SEXP _mvnbart4_cppbart(SEXP x_trainSEXP, SEXP y_matSEXP, SEXP x_testSEXP, SEXP x_cutSEXP, SEXP n_treeSEXP, SEXP node_min_sizeSEXP, SEXP n_mcmcSEXP, SEXP n_burnSEXP, SEXP Sigma_initSEXP, SEXP mu_initSEXP, SEXP sigma_muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP nuSEXP, SEXP S_0_wishSEXP, SEXP A_j_vecSEXP, SEXP update_SigmaSEXP) {
+Rcpp::List cppbart(arma::mat x_train, arma::mat y_mat, arma::mat x_test, arma::mat x_cut, int n_tree, int node_min_size, int n_mcmc, int n_burn, arma::mat Sigma_init, arma::vec mu_init, arma::vec sigma_mu, double alpha, double beta, double nu, arma::mat S_0_wish, arma::vec A_j_vec, bool update_Sigma, bool var_selection_bool);
+RcppExport SEXP _mvnbart4_cppbart(SEXP x_trainSEXP, SEXP y_matSEXP, SEXP x_testSEXP, SEXP x_cutSEXP, SEXP n_treeSEXP, SEXP node_min_sizeSEXP, SEXP n_mcmcSEXP, SEXP n_burnSEXP, SEXP Sigma_initSEXP, SEXP mu_initSEXP, SEXP sigma_muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP nuSEXP, SEXP S_0_wishSEXP, SEXP A_j_vecSEXP, SEXP update_SigmaSEXP, SEXP var_selection_boolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -95,7 +95,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type S_0_wish(S_0_wishSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type A_j_vec(A_j_vecSEXP);
     Rcpp::traits::input_parameter< bool >::type update_Sigma(update_SigmaSEXP);
-    rcpp_result_gen = Rcpp::wrap(cppbart(x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, alpha, beta, nu, S_0_wish, A_j_vec, update_Sigma));
+    Rcpp::traits::input_parameter< bool >::type var_selection_bool(var_selection_boolSEXP);
+    rcpp_result_gen = Rcpp::wrap(cppbart(x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, alpha, beta, nu, S_0_wish, A_j_vec, update_Sigma, var_selection_bool));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -132,7 +133,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mvnbart4_wishart_loglikelihood", (DL_FUNC) &_mvnbart4_wishart_loglikelihood, 3},
     {"_mvnbart4_iwishart_loglikelihood", (DL_FUNC) &_mvnbart4_iwishart_loglikelihood, 3},
     {"_mvnbart4_log_dmvn", (DL_FUNC) &_mvnbart4_log_dmvn, 2},
-    {"_mvnbart4_cppbart", (DL_FUNC) &_mvnbart4_cppbart, 17},
+    {"_mvnbart4_cppbart", (DL_FUNC) &_mvnbart4_cppbart, 18},
     {"_mvnbart4_cppbart_CLASS", (DL_FUNC) &_mvnbart4_cppbart_CLASS, 16},
     {NULL, NULL, 0}
 };

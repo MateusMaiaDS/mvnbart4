@@ -1,7 +1,7 @@
 # Generating a new simulated dataset from different Friedman scenario
 # ====
 p <- 10
-n <- 1000
+n <- 250
 mvn_dim <- 3
 if(mvn_dim==3){
      sigma1 <- 1
@@ -35,7 +35,7 @@ sim_mvn_friedman <- function(n, p, mvn_dim,Sigma,seed = NULL){
 
      # Adding the only if p=3
      if(mvn_dim==3){
-          y3 <- 15* x[,5] + 20*(x[,3]-0.5)^2
+          y3 <- 15* x[,5]
      }
 
      y <- matrix(0,nrow = n,ncol = mvn_dim)
@@ -59,9 +59,9 @@ sim_mvn_friedman <- function(n, p, mvn_dim,Sigma,seed = NULL){
                   Sigma = Sigma))
 }
 
-sim_data <- sim_mvn_friedman(n = n,p = 5,mvn_dim = mvn_dim,
+sim_data <- sim_mvn_friedman(n = n,p = 10,mvn_dim = mvn_dim,
                              Sigma = Sigma,seed = 42)
-sim_new <- sim_mvn_friedman(n = n,p = 5,mvn_dim = mvn_dim,
+sim_new <- sim_mvn_friedman(n = n,p = 10,mvn_dim = mvn_dim,
                              Sigma = Sigma,seed = 43)
 
 # Loading the package
@@ -71,11 +71,15 @@ df_x <- as.data.frame(sim_data$x)
 df_y <- sim_data$y
 df_x_new <- as.data.frame(sim_new$x)
 
+
+
 mod <- mvnbart4(x_train = df_x,
                 y_mat = df_y,
                 x_test = df_x_new,
                 df = 10,n_tree = 100)
 
+
+mod$used_vars[1,][[1]][,,3] %>% apply(2,sum)
 # For the 2-dvariate case
 if(mvn_dim == 2) {
      par(mfrow=c(3,1))

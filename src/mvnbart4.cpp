@@ -465,6 +465,19 @@ void get_nogs(std::vector<Node*>& nogs, Node* node){
         }
 }
 
+
+
+// Collect the Split VARS
+void collect_split_vars(arma::vec& var_count, Node* tree){
+
+        // Iterating over all the terminal nodes
+        if(!tree->isLeaf){
+                var_count[tree->var_split] = var_count[tree->var_split] + 1;
+                collect_split_vars(var_count, tree->left);
+                collect_split_vars(var_count,tree->left);
+        }
+
+}
 // Creating the vectors of nogs
 std::vector<Node*> nogs(Node* tree){
         std::vector<Node*> nogs_init(0);
@@ -1207,7 +1220,8 @@ Rcpp::List cppbart(arma::mat x_train,
           double alpha, double beta, double nu,
           arma::mat S_0_wish,
           arma::vec A_j_vec,
-          bool update_Sigma){
+          bool update_Sigma,
+          bool var_selection_bool){
 
         // Posterior counter
         int curr = 0;
@@ -1257,6 +1271,12 @@ Rcpp::List cppbart(arma::mat x_train,
         arma::cube tree_fits_store(data.x_train.n_rows,data.n_tree,data.y_mat.n_cols,arma::fill::zeros);
         arma::cube tree_fits_store_test(data.x_test.n_rows,data.n_tree,y_mat.n_cols,arma::fill::zeros);
 
+        // Setting a vector to store the variables used in the split
+        arma::field<arma::cube> all_j_tree_var(data.n_mcmc);
+        for(int cube_dim = 0; cube_dim <all_j_tree_var.size(); cube_dim ++){
+                all_j_tree_var(cube_dim) = arma::cube(data.n_tree,data.x_train.n_cols,data.y_mat.n_cols);
+        }
+
 
         double verb;
 
@@ -1305,10 +1325,17 @@ Rcpp::List cppbart(arma::mat x_train,
                 arma::mat y_mj(data.x_train.n_rows,data.y_mat.n_cols);
                 arma::mat y_hat_mj(data.x_train.n_rows,data.y_mat.n_cols);
 
+                // Aux for used vars
+                arma::cube cube_used_vars(data.n_tree,data.x_train.n_cols,data.y_mat.n_cols);
+
                 // Iterating over the d-dimension MATRICES of the response.
                 for(int j = 0; j < data.y_mat.n_cols; j++){
 
 
+                        // Storing all used vars
+                        arma::mat mat_used_vars(data.n_tree, data.x_train.n_cols);
+
+                        // Covariance objects
                         arma::mat Sigma_j_mj(1,(data.y_mat.n_cols-1),arma::fill::zeros);
                         arma::mat Sigma_mj_j((data.y_mat.n_cols-1),1,arma::fill::zeros);
                         arma::mat Sigma_mj_mj = data.Sigma;
@@ -1418,6 +1445,15 @@ Rcpp::List cppbart(arma::mat x_train,
                                 // cout << "Residuals error 3.0"<< endl;
                                 tree_fits_store_test.slice(j).col(t) = y_j_test_hat;
                                 // cout << "Residuals error 4.0"<< endl;
+
+                                // Aux for the used vars
+                                if(var_selection_bool){
+                                        arma::vec used_vars(data.x_train.n_cols);
+                                        collect_split_vars(used_vars,all_forest.trees[curr_tree_counter]);
+                                        mat_used_vars.row(t) = used_vars.t();
+                                }
+                                // arma::cout << "Used vars on tree: " << used_vars << endl;
+
                         } // End of iterations over "t"
 
                         // Summing over all trees
@@ -1427,7 +1463,12 @@ Rcpp::List cppbart(arma::mat x_train,
                         prediction_test_sum = sum(tree_fits_store_test.slice(j),1);
                         y_mat_test_hat.col(j) = prediction_test_sum;
 
+                        cube_used_vars.slice(j) = mat_used_vars;
                 }// End of iterations over "j"
+
+
+                // Storing cube of used vars
+                all_j_tree_var(i) = cube_used_vars;
 
                 // std::cout << "Error Tau: " << data.tau<< endl;
                 if(update_Sigma){
@@ -1471,7 +1512,8 @@ Rcpp::List cppbart(arma::mat x_train,
                                   Sigma_post, //[3]
                                   all_Sigma_post, // [4]
                                   data.move_proposal, // [5]
-                                  data.move_acceptance //[6]
+                                  data.move_acceptance, //[6]
+                                  all_j_tree_var //[7]
                                 );
 }
 
@@ -1585,7 +1627,8 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                    double nu,
                    double alpha, double beta,
                    unsigned int m,
-                   bool update_sigma){
+                   bool update_sigma,
+                   bool var_selection_bool){
 
         // Posterior counter
         int curr = 0;
@@ -1661,6 +1704,12 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
         arma::mat y_mj(data.x_train.n_rows,data.y_mat.n_cols);
         arma::mat y_hat_mj(data.x_train.n_rows,data.y_mat.n_cols);
 
+        // Setting a vector to store the variables used in the split
+        arma::field<arma::cube> all_j_tree_var(data.n_mcmc);
+        for(int cube_dim = 0; cube_dim <all_j_tree_var.size(); cube_dim ++){
+                all_j_tree_var(cube_dim) = arma::cube(data.n_tree,data.x_train.n_cols,data.y_mat.n_cols);
+        }
+
         for(int i = 0;i<data.n_mcmc;i++){
 
                 // cout << "MCMC iter: " << i << endl;
@@ -1692,8 +1741,16 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                 //
                 arma::vec partial_u(data.x_train.n_rows);
 
+
+                // Aux for used vars
+                arma::cube cube_used_vars(data.n_tree,data.x_train.n_cols,data.y_mat.n_cols);
+
                 // Iterating over the d-dimension MATRICES of the response.
                 for(int j = 0; j < data.y_mat.n_cols; j++){
+
+
+                        // Storing all used vars
+                        arma::mat mat_used_vars(data.n_tree, data.x_train.n_cols);
 
                         // cout << "Tree iter: " << j << endl;
                         // cout << "Sigma dim : " << data.Sigma.n_rows << " x " << data.Sigma.n_cols << endl;
@@ -1801,7 +1858,20 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                                 // cout << "Residuals error 3.0"<< endl;
                                 tree_fits_store_test.slice(j).col(t) = y_j_test_hat;
                                 // cout << "Residuals error 4.0"<< endl;
+
+                                // Aux for the used vars
+                                if(var_selection_bool){
+                                        arma::vec used_vars(data.x_train.n_cols);
+                                        collect_split_vars(used_vars,all_forest.trees[curr_tree_counter]);
+                                        mat_used_vars.row(t) = used_vars.t();
+                                }
+
                         } // End of iterations over "t"
+
+
+                        // Storing all used VARS for the y_{j} dimension
+                        cube_used_vars.slice(j) = mat_used_vars;
+
 
                         // Summing over all trees
                         prediction_train_sum = sum(tree_fits_store.slice(j),1);
@@ -1816,6 +1886,11 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                         // Rcpp::Rcout << "Sucess!" << endl;
 
                 }// End of iterations over "j"
+
+
+                // Storing cube of used vars
+                all_j_tree_var(i) = cube_used_vars;
+
 
                 if(update_sigma){
                         arma::mat residuals_ = y_mat_hat-z_mat_train;
@@ -1901,7 +1976,8 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                                   all_Sigma_post, // [4]
                                   data.move_proposal, // [5]
                                   data.move_acceptance, //[6]
-                                  correlation_matrix_post // [7]
+                                  correlation_matrix_post, // [7]
+                                  all_j_tree_var // [[8]]
         );
 }
 

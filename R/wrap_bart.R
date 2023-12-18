@@ -21,7 +21,8 @@ mvnbart4 <- function(x_train,
                   Sigma_init = NULL,
                   update_Sigma = TRUE,
                   conditional_bool = TRUE,
-                  m = 20 # Degrees of freed for the classification setting.
+                  m = 20, # Degrees of freed for the classification setting.
+                  var_selection_bool = TRUE
                   ) {
 
      # Verifying if it's been using a y_mat matrix
@@ -202,7 +203,8 @@ mvnbart4 <- function(x_train,
                                  sigma_mu_j,
                                  nu,
                                  alpha,beta,
-                                 m,update_Sigma)
+                                 m,update_Sigma,
+                                 var_selection_bool)
      } else {
                 bart_obj <- cppbart(x_train_scale,
                                   y_mat,
@@ -218,7 +220,8 @@ mvnbart4 <- function(x_train,
                                   alpha,beta,nu,
                                   S_0_wish,
                                   A_j,
-                                  update_Sigma)
+                                  update_Sigma,
+                                  var_selection_bool)
      }
 
 
@@ -249,6 +252,19 @@ mvnbart4 <- function(x_train,
 
      # Getting the list of outcloes
      if(class_model){
+
+             # Case if storing a variable selection or not
+             if(var_selection_bool){
+                     var_importance <- array(NA,dim = c(n_mcmc,ncol(x_test_scale),ncol(y_mat)))
+                     for(ii in 1:n_mcmc){
+                             for(jj in 1:ncol(y_mat)){
+                                     var_importance[ii,,jj] <- apply(bart_obj[[8]][ii][[1]][,,jj],2,sum)
+                             }
+                     }
+             } else {
+                     var_importance <- NULL
+             }
+
              list_obj_ <- list(y_hat = y_train_post,
                   y_hat_test = y_test_post,
                   y_hat_mean = y_mat_mean,
@@ -272,6 +288,19 @@ mvnbart4 <- function(x_train,
                               y_mat = y_mat,
                               x_test = x_test))
      } else {
+
+             # Case if storing a variable selection or not
+             if(var_selection_bool){
+                     var_importance <- array(NA,dim = c(n_mcmc,ncol(x_test_scale),ncol(y_mat)))
+                     for(ii in 1:n_mcmc){
+                             for(jj in 1:ncol(y_mat)){
+                                var_importance[ii,,jj] <- apply(bart_obj[[7]][ii][[1]][,,jj],2,sum)
+                             }
+                     }
+             } else {
+                     var_importance <- NULL
+             }
+
              list_obj_ <- list(y_hat = y_train_post,
                   y_hat_test = y_test_post,
                   y_hat_mean = y_mat_mean,
@@ -280,6 +309,7 @@ mvnbart4 <- function(x_train,
                   Sigma_post_mean = Sigma_post_mean,
                   sigmas_mean = sigmas_mean,
                   all_Sigma_post = all_Sigma_post,
+                  var_importance = var_importance,
                   prior = list(n_tree = n_tree,
                                alpha = alpha,
                                beta = beta,
