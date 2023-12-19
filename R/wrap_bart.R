@@ -164,7 +164,7 @@ mvnbart4 <- function(x_train,
              # No extra parameters are need to calculate for the class model
      } else {
              # Getting the naive sigma value
-             nsigma <- apply(y_mat, 2, function(Y){naive_sigma(x = x_train_scale,y = Y)})
+             nsigma <- apply(y_mat_scale, 2, function(Y){naive_sigma(x = x_train_scale,y = Y)})
 
              # Define the ensity function
              phalft <- function(x, A, nu){
@@ -194,7 +194,7 @@ mvnbart4 <- function(x_train,
                      Sigma_init <- diag(nsigma^2)
              }
 
-             mu_init <- apply(y_mat,2,mean)
+             mu_init <- apply(y_mat_scale,2,mean)
      }
 
 

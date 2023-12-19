@@ -18,8 +18,11 @@ if(mvn_dim==3){
      determinant(Sigma)$modulus[1]
      eigen(Sigma)$values
 } else {
-     Sigma <- diag(c(1,10),nrow = mvn_dim)
-     Sigma[1,2] <- Sigma[2,1] <-sqrt(1)*sqrt(10)*0.75
+     sigma1 <- 1
+     sigma2 <- 10
+     rho12 <- 0.75
+     Sigma <- diag(c(sigma1^2,sigma^2),nrow = mvn_dim)
+     Sigma[1,2] <- Sigma[2,1] <-sigma1*sigma2*rho12
      determinant(Sigma)$modulus[1]
      eigen(Sigma)$values
 
@@ -109,13 +112,13 @@ for( y_j_plot in 1:3){
 
 # For the 2-dvariate case
 if(mvn_dim == 2) {
-     par(mfrow=c(3,1))
-     plot(mod$Sigma_post[1,1,], main = expression(sigma[1]), type = 'l', ylab = expression(sigma[1]),xlab = "MCMC iter")
-     abline(h = Sigma[1,1], lty = 'dashed', col = 'blue')
-     plot(mod$Sigma_post[2,2,], main = expression(sigma[2]), type = 'l', ylab = expression(sigma[2]),xlab = "MCMC iter")
-     abline(h = Sigma[2,2], lty = 'dashed', col = 'blue')
+     par(mfrow=c(1,3))
+     plot(sqrt(mod$Sigma_post[1,1,]), main = expression(sigma[1]), type = 'l', ylab = expression(sigma[1]),xlab = "MCMC iter")
+     abline(h = sqrt(Sigma[1,1]), lty = 'dashed', col = 'blue')
+     plot(sqrt(mod$Sigma_post[2,2,]), main = expression(sigma[2]), type = 'l', ylab = expression(sigma[2]),xlab = "MCMC iter")
+     abline(h = sqrt(Sigma[2,2]), lty = 'dashed', col = 'blue')
      plot(mod$Sigma_post[1,2,]/(sqrt(mod$Sigma_post[1,1,])*sqrt(mod$Sigma_post[2,2,])), main = expression(rho), type = 'l', ylab = expression(rho),xlab = "MCMC iter")
-     abline(h = 0.75, lty = 'dashed', col = 'blue')
+     abline(h = rho12, lty = 'dashed', col = 'blue')
 } else if(mvn_dim ==3 ){
      par(mfrow=c(2,3))
      plot(sqrt(mod$Sigma_post[1,1,]), main = expression(sigma[1]), type = 'l', ylab = expression(sigma[1]),xlab = "MCMC iter")
