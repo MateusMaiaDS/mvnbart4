@@ -17,6 +17,7 @@ mvnbart4 <- function(x_train,
                   sigquant = 0.9,
                   kappa = 2,
                   numcut = 100L, # Defining the grid of split rules
+                  scale_y = TRUE,
                   usequants = FALSE,
                   Sigma_init = NULL,
                   update_Sigma = TRUE,
@@ -29,6 +30,8 @@ mvnbart4 <- function(x_train,
      if(NCOL(y_mat)<2){
          stop("Insert a valid multivariate response. ")
      }
+
+
 
      # Changing to a classification model
      if(length(unique(c(y_mat)))==2){
@@ -115,11 +118,14 @@ mvnbart4 <- function(x_train,
      max_y <- apply(y_mat,2,max)
 
      # Scaling the data
-     # y_mat_scale <- y_mat
-     # for(n_col in 1:NCOL(y_mat)){
-     #    y_mat_scale[,n_col] <- normalize_bart(y = y_mat[,n_col],a = min_y[n_col],b = max_y[n_col])
-     # }
-
+     if(scale_y){
+             y_mat_scale <- y_mat
+             for(n_col in 1:NCOL(y_mat)){
+                y_mat_scale[,n_col] <- normalize_bart(y = y_mat[,n_col],a = min_y[n_col],b = max_y[n_col])
+             }
+     } else {
+             y_mat_scale <- y_mat
+     }
      # Getting the min and max for each column
      min_x <- apply(x_train_scale,2,min)
      max_x <- apply(x_train_scale, 2, max)
@@ -131,7 +137,12 @@ mvnbart4 <- function(x_train,
              # tau_mu_j <- rep((n_tree*(kappa^2))/0.00001,NCOL(y_mat))
 
      } else {
-             tau_mu_j <- (4*n_tree*(kappa^2))/((max_y-min_y)^2)
+             if(scale_y){
+                     tau_mu_j <- rep((4*n_tree*(kappa^2)),NCOL(y_mat))
+             } else {
+                     tau_mu_j <- (4*n_tree*(kappa^2))/((max_y-min_y)^2)
+             }
+
      }
 
      # Getting sigma
@@ -207,7 +218,7 @@ mvnbart4 <- function(x_train,
                                  var_selection_bool)
      } else {
                 bart_obj <- cppbart(x_train_scale,
-                                  y_mat,
+                                  y_mat_scale,
                                   x_test_scale,
                                   xcut_m,
                                   n_tree,
@@ -237,16 +248,32 @@ mvnbart4 <- function(x_train,
      y_train_for <- matrix(0,nrow = nrow(y_mat),ncol = ncol(y_mat))
      y_test_for <- matrix(0,nrow = nrow(x_test),ncol = ncol(y_mat))
 
-     for(i in 1:(dim(Sigma_post)[3])){
-             Sigma_for <- Sigma_for + Sigma_post[,,i]
-             y_train_for <- y_train_for + y_train_post[,,i]
-             y_test_for <- y_test_for + y_test_post[,,i]
+     Sigma_scale <- diag((max_y-min_y))
+
+     if(scale_y){
+             for(i in 1:(dim(Sigma_post)[3])){
+                     Sigma_post[,,i] <- crossprod(Sigma_scale,tcrossprod(Sigma_post[,,i],Sigma_scale))
+                     Sigma_for <- Sigma_for + + Sigma_post[,,i]
+                     for( jj in 1:NCOL(y_mat)){
+                             y_train_for[,jj] <- y_train_for[,jj] + unnormalize_bart(z = y_train_post[,jj,i],a = min_y[jj],b = max_y[jj])
+                             y_test_for[,jj] <- y_test_for[,jj] +  unnormalize_bart(z = y_test_post[,jj,i],a = min_y[jj],b = max_y[jj])
+                     }
+             }
+     } else {
+             for(i in 1:(dim(Sigma_post)[3])){
+                     Sigma_for <- Sigma_for
+                     y_train_for <- y_train_for +  y_train_post[,,i]
+                     y_test_for <- y_test_for +  y_test_post[,,i]
+             }
      }
+
 
      Sigma_post_mean <- Sigma_for/dim(Sigma_post)[3]
      y_mat_mean <- y_train_for/dim(y_train_post)[3]
      y_mat_test_mean <- y_test_for/dim(y_test_post)[3]
      sigmas_mean <- sqrt(diag(Sigma_post_mean))
+
+     # plot(y_mat_mean[,2],sim_data$y[,2])
 
      # Transforming to classification context
 
