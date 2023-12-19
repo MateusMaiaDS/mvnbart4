@@ -1,7 +1,7 @@
 # Generating a new simulated dataset from different Friedman scenario
 # ====
 p <- 10
-n <- 250
+n <- 1000
 mvn_dim <- 3
 if(mvn_dim==3){
      sigma1 <- 1
@@ -79,7 +79,14 @@ mod <- mvnbart4(x_train = df_x,
                 df = 10,n_tree = 100)
 
 
-mod$used_vars[1,][[1]][,,3] %>% apply(2,sum)
+# Visualzing the variable importance
+y_j_plot <- 1
+total_count <- mod$var_importance[,,y_j_plot] %>% apply(2,sum)
+norm_count <- total_count/sum(total_count)
+names(norm_count) <- paste0("x.",1:ncol(df_x))
+sort <- sort(norm_count,decreasing = TRUE)
+barplot(sort,main = paste0("Var importance for y.",y_j_plot))
+
 # For the 2-dvariate case
 if(mvn_dim == 2) {
      par(mfrow=c(3,1))

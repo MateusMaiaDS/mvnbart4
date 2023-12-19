@@ -25,7 +25,7 @@ cppbart <- function(x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc
     .Call('_mvnbart4_cppbart', PACKAGE = 'mvnbart4', x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, alpha, beta, nu, S_0_wish, A_j_vec, update_Sigma, var_selection_bool)
 }
 
-cppbart_CLASS <- function(x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, nu, alpha, beta, m, update_sigma) {
-    .Call('_mvnbart4_cppbart_CLASS', PACKAGE = 'mvnbart4', x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, nu, alpha, beta, m, update_sigma)
+cppbart_CLASS <- function(x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, nu, alpha, beta, m, update_sigma, var_selection_bool) {
+    .Call('_mvnbart4_cppbart_CLASS', PACKAGE = 'mvnbart4', x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, nu, alpha, beta, m, update_sigma, var_selection_bool)
 }
 
