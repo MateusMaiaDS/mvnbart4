@@ -2,7 +2,7 @@ set.seed(42)
 # Generating a new simulated dataset from different Friedman scenario
 # ====
 p <- 10
-n <- 1000
+n <- 250
 mvn_dim <- 3
 if(mvn_dim==3){
      sigma1 <- 1

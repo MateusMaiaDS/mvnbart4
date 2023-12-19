@@ -249,6 +249,13 @@ mvnbart4 <- function(x_train,
      y_test_for <- matrix(0,nrow = nrow(x_test),ncol = ncol(y_mat))
 
      Sigma_scale <- diag((max_y-min_y))
+     for(i in 1:nrow(Sigma_scale)){
+
+             # Finish to adjsut this later
+             for(j in (i+1):nrow(Sigma_scale)){
+                Sigma_scale[i,j] <- Sigma_scale[j,i] <- sqrt(max_y[i]-min_y[i])*sqrt(max_y[j]-min_y[j])
+             }
+     }
 
      if(scale_y){
              for(i in 1:(dim(Sigma_post)[3])){
