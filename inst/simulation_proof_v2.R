@@ -214,7 +214,7 @@ df_y <- sim_data$y
 df_x_new <- as.data.frame(sim_new$x)
 
 mod <- mvnbart4(x_train = df_x,
-                y_mat = df_y,
+                y_mat = df_y,n_burn = 0,
                 x_test = df_x_new,scale_y = FALSE,
                 var_selection_bool = TRUE,
                 df = 10,n_tree = 100)

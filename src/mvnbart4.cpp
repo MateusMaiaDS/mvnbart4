@@ -1946,7 +1946,7 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                         y_train_hat_post.slice(curr) = y_mat_hat;
                         y_test_hat_post.slice(curr) = y_mat_test_hat;
                         Sigma_post.slice(curr) = data.R;
-                        correlation_matrix_post.row(curr) = makeSigmaInv(data.R);
+                        correlation_matrix_post.row(curr) = (makeSigmaInv(data.R)).t();
                         curr++;
                 }
 
