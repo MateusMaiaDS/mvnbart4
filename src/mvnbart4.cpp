@@ -1533,7 +1533,7 @@ double up_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double lower, doub
         arma::mat z_mj_hat = mean_mat_;
         z_mj.shed_col(j_);
         z_mj_hat.shed_col(j_);
-        double mean_ = mean_mat_(i_,j_) + arma::as_scalar(Sigma_mj_j_*Sigma_mj_mj_inv_*(z_mj.row(i_)-z_mj_hat.row(i_))); // Old version
+        double mean_ = mean_mat_(i_,j_) + arma::as_scalar((Sigma_mj_j_.t()*Sigma_mj_mj_inv_)*(z_mj.row(i_)-z_mj_hat.row(i_)).t()); // Old version
 
         while(sample_bool){
 
@@ -1567,7 +1567,7 @@ double lw_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double upper, doub
         arma::mat z_mj_hat = mean_mat_;
         z_mj.shed_col(j_);
         z_mj_hat.shed_col(j_);
-        double mean_ = mean_mat_(i_,j_) + arma::as_scalar(Sigma_mj_j_*Sigma_mj_mj_inv_*(z_mj.row(i_)-(z_mj_hat.row(i_)))); // Old version
+        double mean_ = mean_mat_(i_,j_) + arma::as_scalar((Sigma_mj_j_.t()*Sigma_mj_mj_inv_)*(z_mj.row(i_)-z_mj_hat.row(i_)).t()); // Old version
 
         while(sample_bool){
 
@@ -1793,11 +1793,11 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                         // Calculating the current partial U
                         for(int i_train = 0; i_train < data.y_mat.n_rows;i_train++){
                                 // cout << "The scale factor of  the residuals " << Sigma_mj_j*Sigma_mj_mj_inv <<endl;
-                                partial_u(i_train) = arma::as_scalar((Sigma_mj_j.t()*Sigma_mj_mj_inv)*(y_mj.row(i_train)-y_hat_mj.row(i_train)).t());
-
+                                partial_u(i_train) = arma::as_scalar((Sigma_mj_j.t()*Sigma_mj_mj_inv)*(y_mj.row(i_train)-y_hat_mj.row(i_train)).t()); // Old version
+                                // cout << "error here" << endl;
                         }
 
-                        double v = Sigma_j_j - arma::as_scalar(Sigma_j_mj*Sigma_mj_mj_inv*Sigma_mj_j);
+                        double v = Sigma_j_j - arma::as_scalar(Sigma_j_mj*(Sigma_mj_mj_inv*Sigma_mj_j));
                         data.v_j = v;
                         // cout << "Sigma_jj: " << Sigma_mj_mj_inv<< endl;
                         // cout << " Variance term: " << data.R(0,1) << endl;
