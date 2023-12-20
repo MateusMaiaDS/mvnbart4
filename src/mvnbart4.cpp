@@ -1521,7 +1521,7 @@ Rcpp::List cppbart(arma::mat x_train,
 // CLASSIFICATION BART FUNCTIONS
 // =====================================
 
-
+//[[Rcpp::export]]
 double truncated_sample(double mu, bool left) {
 
         double x;
@@ -1530,6 +1530,7 @@ double truncated_sample(double mu, bool left) {
         }
         double alpha = (mu + sqrt((mu) * (mu) + 4.0)) / 2.0;
         bool accept = false;
+        int iteration_counter = 0;
 
         while (!accept) {
                 double z = -log(arma::randu(arma::distr_param(0.0,1.0)))/alpha + (mu);
@@ -1544,12 +1545,20 @@ double truncated_sample(double mu, bool left) {
                 double u = arma::randu(arma::distr_param(0.0,1.0));
 
                 if (u < p) {
+
                         if(left){
-                                x = z + mu;
+                                x = z - mu;
                         } else {
                                 x = -z + mu;
                         }
                         accept = true;
+                }
+
+                iteration_counter++;
+
+                if(iteration_counter>1e10){
+                        arma:: cout << "Mean value: " << mu << endl;
+                        throw std::range_error("many iterations for the the truncated-sampler");
                 }
         }
 
@@ -1562,8 +1571,8 @@ double up_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double v_j_,
                      arma::mat &Sigma_mj_mj_inv_, arma::mat &Sigma_j_mj_,
                      arma::mat &Sigma_mj_j_){
 
-        bool sample_bool = true;
-        int exit = 0;
+        // bool sample_bool = true;
+        // int exit = 0;
 
         // Getting the shed vesion
         arma::mat z_mj = z_mat_;
@@ -1582,8 +1591,8 @@ double lw_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double v_j_,
                      arma::mat &Sigma_mj_mj_inv_, arma::mat &Sigma_j_mj_,
                      arma::mat &Sigma_mj_j_){
 
-        bool sample_bool = true;
-        int exit = 0;
+        // bool sample_bool = true;
+        // int exit = 0;
 
         // Getting the shed vesion
         arma::mat z_mj = z_mat_;
