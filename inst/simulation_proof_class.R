@@ -77,8 +77,8 @@ df_x_new <- as.data.frame(sim_new$x)
 
 mod <- mvnbart4(x_train = df_x,
                 y_mat = df_y,
-                x_test = df_x_new,scale_y = TRUE,m = nrow(df_x),
-                var_selection_bool = TRUE,tn_sampler = TRUE,
+                x_test = df_x_new,scale_y = FALSE,m = nrow(df_x),
+                var_selection_bool = TRUE,tn_sampler = FALSE,
                 df = 10,n_tree = 100)
 
 

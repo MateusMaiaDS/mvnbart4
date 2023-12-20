@@ -37,6 +37,7 @@ mvnbart4 <- function(x_train,
      # Changing to a classification model
      if(length(unique(c(y_mat)))==2){
            class_model <- TRUE
+           scale_y <- FALSE
      } else {
            class_model <- FALSE
      }
@@ -48,6 +49,9 @@ mvnbart4 <- function(x_train,
      }
 
 
+     if(class_model & scale_y){
+             stop("Classificaton model should not scale y.")
+     }
      # Verifying if x_train and x_test are matrices
      if(!is.data.frame(x_train) || !is.data.frame(x_test)){
           stop("Insert valid data.frame for both data and xnew.")
@@ -252,10 +256,12 @@ mvnbart4 <- function(x_train,
 
      Sigma_scale <- diag((max_y-min_y))
 
-     if(scale_y){
+     # Reg_model_bool
+     reg_model <- !class_model
+     if(scale_y & reg_model){
              for(i in 1:(dim(Sigma_post)[3])){
                      Sigma_post[,,i] <- crossprod(Sigma_scale,tcrossprod(Sigma_post[,,i],Sigma_scale))
-                     Sigma_for <- Sigma_for + + Sigma_post[,,i]
+                     Sigma_for <- Sigma_for +  Sigma_post[,,i]
                      for( jj in 1:NCOL(y_mat)){
                              y_train_for[,jj] <- y_train_for[,jj] + unnormalize_bart(z = y_train_post[,jj,i],a = min_y[jj],b = max_y[jj])
                              y_test_for[,jj] <- y_test_for[,jj] +  unnormalize_bart(z = y_test_post[,jj,i],a = min_y[jj],b = max_y[jj])
@@ -263,7 +269,7 @@ mvnbart4 <- function(x_train,
              }
      } else {
              for(i in 1:(dim(Sigma_post)[3])){
-                     Sigma_for <- Sigma_for
+                     Sigma_for <- Sigma_for + Sigma_post[,,i]
                      y_train_for <- y_train_for +  y_train_post[,,i]
                      y_test_for <- y_test_for +  y_test_post[,,i]
              }
