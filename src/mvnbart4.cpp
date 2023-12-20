@@ -1522,11 +1522,13 @@ Rcpp::List cppbart(arma::mat x_train,
 // =====================================
 
 //[[Rcpp::export]]
-double truncated_sample(double mu, bool left) {
+double truncated_sample(double mu, bool left, double sigma_) {
 
         double x;
         if(left){
-                mu = -mu;
+                mu = -mu/sigma_;
+        } else {
+                mu = mu/sigma_;
         }
         double alpha = (mu + sqrt((mu) * (mu) + 4.0)) / 2.0;
         bool accept = false;
@@ -1547,16 +1549,16 @@ double truncated_sample(double mu, bool left) {
                 if (u < p) {
 
                         if(left){
-                                x = z - mu;
+                                x = z*sigma_ - mu;
                         } else {
-                                x = -z + mu;
+                                x = -z*sigma_ + mu;
                         }
                         accept = true;
                 }
 
                 iteration_counter++;
 
-                if(iteration_counter>1e10){
+                if(iteration_counter>1e3){
                         arma:: cout << "Mean value: " << mu << endl;
                         throw std::range_error("many iterations for the the truncated-sampler");
                 }
@@ -1566,13 +1568,14 @@ double truncated_sample(double mu, bool left) {
         return x;
 }
 
-double up_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double v_j_,
+double up_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double lower, double v_j_,
                      int i_, int j_,
                      arma::mat &Sigma_mj_mj_inv_, arma::mat &Sigma_j_mj_,
-                     arma::mat &Sigma_mj_j_){
+                     arma::mat &Sigma_mj_j_, bool tn_sampler){
 
-        // bool sample_bool = true;
-        // int exit = 0;
+        bool sample_bool = true;
+        int exit = 0;
+        // bool tn_sampler = true;
 
         // Getting the shed vesion
         arma::mat z_mj = z_mat_;
@@ -1581,18 +1584,40 @@ double up_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double v_j_,
         z_mj_hat.shed_col(j_);
         double mean_ = mean_mat_(i_,j_) + arma::as_scalar((Sigma_mj_j_.t()*Sigma_mj_mj_inv_)*(z_mj.row(i_)-z_mj_hat.row(i_)).t()); // Old version
 
-        return truncated_sample(mean_,true);
+        if(tn_sampler){
+                return truncated_sample(mean_,true,sqrt(v_j_));
+        } else {
+                while(sample_bool){
+
+                        double sample = R::rnorm(mean_,sqrt(v_j_));
+
+                        if(sample > lower){
+                                return sample;
+                        } else {
+                                exit++;
+                        }
+
+                        if(exit > 1e8){
+                                sample_bool =  false;
+                        }
+                }
+
+                Rcpp::stop(" Choose another upper boundary");
+                return 0.0;
+        }
 }
 
 
 
-double lw_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double v_j_,
+double lw_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double upper, double v_j_,
                      int i_, int j_,
                      arma::mat &Sigma_mj_mj_inv_, arma::mat &Sigma_j_mj_,
-                     arma::mat &Sigma_mj_j_){
+                     arma::mat &Sigma_mj_j_, bool tn_sampler){
 
-        // bool sample_bool = true;
-        // int exit = 0;
+        bool sample_bool = true;
+        int exit = 0;
+        // bool tn_sampler =  true;
+
 
         // Getting the shed vesion
         arma::mat z_mj = z_mat_;
@@ -1601,8 +1626,27 @@ double lw_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double v_j_,
         z_mj_hat.shed_col(j_);
         double mean_ = mean_mat_(i_,j_) + arma::as_scalar((Sigma_mj_j_.t()*Sigma_mj_mj_inv_)*(z_mj.row(i_)-z_mj_hat.row(i_)).t()); // Old version
 
-        return truncated_sample(mean_,false);
+        if(tn_sampler){
+                return truncated_sample(mean_,false,sqrt(v_j_));
+        } else {
+                while(sample_bool){
 
+                        double sample = R::rnorm(mean_,sqrt(v_j_));
+
+                        if(sample <= upper){
+                                return sample;
+                        } else {
+                                exit++;
+                        }
+
+                        if(exit > 1e8){
+                                sample_bool =  false;
+                        }
+                }
+
+                Rcpp::stop(" Choose another upper boundary");
+                return 0.0;
+        }
 }
 
 
@@ -1614,18 +1658,19 @@ void update_z(arma::mat &z_mat_,
               int j_,
               arma::mat &Sigma_mj_mj_inv_,
               arma::mat &Sigma_j_mj_,
-              arma::mat &Sigma_mj_j_){
+              arma::mat &Sigma_mj_j_,
+              bool tn_sampler){
 
         // cout << "Nrow z_mat_" << y_hat.n_rows << "-- ncols: " << y_hat.n_cols << endl;
         for(int i = 0; i < data.x_train.n_rows; i++){
 
                 if(data.y_mat(i,j_)==1){
                         // cout << "Y_hat(" <<i<<","<<j_<<") :" << y_hat(i,j_) << endl;
-                        z_mat_(i,j_) = up_tn_sampler(z_mat_,y_hat,data.v_j,
-                               i,j_,Sigma_mj_mj_inv_,Sigma_j_mj_,Sigma_mj_j_);
+                        z_mat_(i,j_) = up_tn_sampler(z_mat_,y_hat,0.0,data.v_j,
+                               i,j_,Sigma_mj_mj_inv_,Sigma_j_mj_,Sigma_mj_j_,tn_sampler);
                 } else {
-                        z_mat_(i,j_) = lw_tn_sampler(z_mat_,y_hat,data.v_j,
-                               i,j_,Sigma_mj_mj_inv_,Sigma_j_mj_,Sigma_mj_j_);
+                        z_mat_(i,j_) = lw_tn_sampler(z_mat_,y_hat,0.0,data.v_j,
+                               i,j_,Sigma_mj_mj_inv_,Sigma_j_mj_,Sigma_mj_j_,tn_sampler);
                 }
         }
 }
@@ -1646,7 +1691,8 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
                    double alpha, double beta,
                    unsigned int m,
                    bool update_sigma,
-                   bool var_selection_bool){
+                   bool var_selection_bool,
+                   bool tn_sampler){
 
         // Posterior counter
         int curr = 0;
@@ -1900,7 +1946,7 @@ Rcpp::List cppbart_CLASS(arma::mat x_train,
 
                         // Updating z_j values
                         // Rcpp::Rcout << "Error on update z" << endl;
-                        update_z(z_mat_train,y_mat_hat,data,j,Sigma_mj_mj_inv,Sigma_j_mj,Sigma_mj_j);
+                        update_z(z_mat_train,y_mat_hat,data,j,Sigma_mj_mj_inv,Sigma_j_mj,Sigma_mj_j,tn_sampler);
                         // Rcpp::Rcout << "Sucess!" << endl;
 
                 }// End of iterations over "j"

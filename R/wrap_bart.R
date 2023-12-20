@@ -23,7 +23,8 @@ mvnbart4 <- function(x_train,
                   update_Sigma = TRUE,
                   conditional_bool = TRUE,
                   m = 20, # Degrees of freed for the classification setting.
-                  var_selection_bool = TRUE
+                  var_selection_bool = TRUE,
+                  tn_sampler = TRUE # sampler for the cu
                   ) {
 
      # Verifying if it's been using a y_mat matrix
@@ -215,7 +216,8 @@ mvnbart4 <- function(x_train,
                                  nu,
                                  alpha,beta,
                                  m,update_Sigma,
-                                 var_selection_bool)
+                                 var_selection_bool,
+                                 tn_sampler)
      } else {
                 bart_obj <- cppbart(x_train_scale,
                                   y_mat_scale,

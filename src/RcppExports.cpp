@@ -101,20 +101,21 @@ BEGIN_RCPP
 END_RCPP
 }
 // truncated_sample
-double truncated_sample(double mu, bool left);
-RcppExport SEXP _mvnbart4_truncated_sample(SEXP muSEXP, SEXP leftSEXP) {
+double truncated_sample(double mu, bool left, double sigma_);
+RcppExport SEXP _mvnbart4_truncated_sample(SEXP muSEXP, SEXP leftSEXP, SEXP sigma_SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type mu(muSEXP);
     Rcpp::traits::input_parameter< bool >::type left(leftSEXP);
-    rcpp_result_gen = Rcpp::wrap(truncated_sample(mu, left));
+    Rcpp::traits::input_parameter< double >::type sigma_(sigma_SEXP);
+    rcpp_result_gen = Rcpp::wrap(truncated_sample(mu, left, sigma_));
     return rcpp_result_gen;
 END_RCPP
 }
 // cppbart_CLASS
-Rcpp::List cppbart_CLASS(arma::mat x_train, arma::mat y_mat, arma::mat x_test, arma::mat x_cut, int n_tree, int node_min_size, int n_mcmc, int n_burn, arma::mat Sigma_init, arma::vec mu_init, arma::vec sigma_mu, double nu, double alpha, double beta, unsigned int m, bool update_sigma, bool var_selection_bool);
-RcppExport SEXP _mvnbart4_cppbart_CLASS(SEXP x_trainSEXP, SEXP y_matSEXP, SEXP x_testSEXP, SEXP x_cutSEXP, SEXP n_treeSEXP, SEXP node_min_sizeSEXP, SEXP n_mcmcSEXP, SEXP n_burnSEXP, SEXP Sigma_initSEXP, SEXP mu_initSEXP, SEXP sigma_muSEXP, SEXP nuSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP mSEXP, SEXP update_sigmaSEXP, SEXP var_selection_boolSEXP) {
+Rcpp::List cppbart_CLASS(arma::mat x_train, arma::mat y_mat, arma::mat x_test, arma::mat x_cut, int n_tree, int node_min_size, int n_mcmc, int n_burn, arma::mat Sigma_init, arma::vec mu_init, arma::vec sigma_mu, double nu, double alpha, double beta, unsigned int m, bool update_sigma, bool var_selection_bool, bool tn_sampler);
+RcppExport SEXP _mvnbart4_cppbart_CLASS(SEXP x_trainSEXP, SEXP y_matSEXP, SEXP x_testSEXP, SEXP x_cutSEXP, SEXP n_treeSEXP, SEXP node_min_sizeSEXP, SEXP n_mcmcSEXP, SEXP n_burnSEXP, SEXP Sigma_initSEXP, SEXP mu_initSEXP, SEXP sigma_muSEXP, SEXP nuSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP mSEXP, SEXP update_sigmaSEXP, SEXP var_selection_boolSEXP, SEXP tn_samplerSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -135,7 +136,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< unsigned int >::type m(mSEXP);
     Rcpp::traits::input_parameter< bool >::type update_sigma(update_sigmaSEXP);
     Rcpp::traits::input_parameter< bool >::type var_selection_bool(var_selection_boolSEXP);
-    rcpp_result_gen = Rcpp::wrap(cppbart_CLASS(x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, nu, alpha, beta, m, update_sigma, var_selection_bool));
+    Rcpp::traits::input_parameter< bool >::type tn_sampler(tn_samplerSEXP);
+    rcpp_result_gen = Rcpp::wrap(cppbart_CLASS(x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, nu, alpha, beta, m, update_sigma, var_selection_bool, tn_sampler));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -147,8 +149,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mvnbart4_iwishart_loglikelihood", (DL_FUNC) &_mvnbart4_iwishart_loglikelihood, 3},
     {"_mvnbart4_log_dmvn", (DL_FUNC) &_mvnbart4_log_dmvn, 2},
     {"_mvnbart4_cppbart", (DL_FUNC) &_mvnbart4_cppbart, 18},
-    {"_mvnbart4_truncated_sample", (DL_FUNC) &_mvnbart4_truncated_sample, 2},
-    {"_mvnbart4_cppbart_CLASS", (DL_FUNC) &_mvnbart4_cppbart_CLASS, 17},
+    {"_mvnbart4_truncated_sample", (DL_FUNC) &_mvnbart4_truncated_sample, 3},
+    {"_mvnbart4_cppbart_CLASS", (DL_FUNC) &_mvnbart4_cppbart_CLASS, 18},
     {NULL, NULL, 0}
 };
 

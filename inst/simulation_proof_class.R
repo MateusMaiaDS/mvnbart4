@@ -2,7 +2,7 @@ devtools::load_all()
 
 # test for binary outcomes ####
 p <- 10
-n <- 1000
+n <- 400
 mvn_dim <- 3
 if(mvn_dim==3){
      rho12 <- 0.8
@@ -76,15 +76,15 @@ df_y <- sim_data$y
 df_x_new <- as.data.frame(sim_new$x)
 
 mod <- mvnbart4(x_train = df_x,
-                y_mat = df_y,n_burn = 0,
+                y_mat = df_y,
                 x_test = df_x_new,scale_y = TRUE,
-                var_selection_bool = TRUE,
+                var_selection_bool = TRUE,tn_sampler = FALSE,
                 df = 10,n_tree = 100)
 
 
 # Visualzing the variable importance
-par(mfrow=c(1,3))
-for( y_j_plot in 1:3){
+par(mfrow=c(1,mvn_dim))
+for( y_j_plot in 1:mvn_dim){
      total_count <- apply(mod$var_importance[,,y_j_plot],2,sum)
      norm_count <- total_count/sum(total_count)
      names(norm_count) <- paste0("x.",1:ncol(df_x))
@@ -93,15 +93,15 @@ for( y_j_plot in 1:3){
 }
 
 # Diagonistics of the prediction over the test set
-par(mfrow = c(2,3))
+par(mfrow = c(2,mvn_dim))
 
-for( y_j_plot in 1:3){
-     plot(sim_data$y_true[,y_j_plot],mod$y_hat_mean[,y_j_plot], pch = 20, main = paste0("y.",y_j_plot, " train pred"),
+for( y_j_plot in 1:mvn_dim){
+     plot(sim_data$z_true[,y_j_plot],mod$y_hat_mean[,y_j_plot], pch = 20, main = paste0("y.",y_j_plot, " train pred"),
           xlab = "y.true.train" , ylab = "y.hat.train", col = ggplot2::alpha("black",0.2))
      abline(a = 0,b = 1,col = "blue", lty = 'dashed', lwd = 1.5)
 }
-for( y_j_plot in 1:3){
-     plot(sim_new$y_true[,y_j_plot],mod$y_hat_test_mean[,y_j_plot], pch = 20, main = paste0("y.",y_j_plot, " test pred"),
+for( y_j_plot in 1:mvn_dim){
+     plot(sim_new$z_true[,y_j_plot],mod$y_hat_test_mean[,y_j_plot], pch = 20, main = paste0("y.",y_j_plot, " test pred"),
           xlab = "y.true.test" , ylab = "y.hat.test", col = ggplot2::alpha("black",0.2))
      abline(a = 0,b = 1,col = "blue", lty = 'dashed', lwd = 1.5)
 }
