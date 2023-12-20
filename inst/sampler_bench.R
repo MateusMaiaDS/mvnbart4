@@ -1,24 +1,16 @@
-libs=c("truncnorm","msm","inline","Rcpp","RcppArmadillo","rbenchmark")
-if( sum(!(libs %in% .packages(all.available = TRUE)))>0){ install.packages(libs[!(libs %in% .packages(all.available = TRUE))])}
-for(i in 1:length(libs)) {library(libs[i],character.only = TRUE,quietly=TRUE)}
+rm(list=ls())
+library(microbenchmark)
+devtools::load_all()
+library(purrr)
+n_ <- 1000
+mean_ <- 5
+microbenchmark::microbenchmark( pkg_impl <- msm::rtnorm(n = n_,mean = mean_,sd = 1, upper = 0),
+                                cpp_impl <- replicate(n = n_,truncated_sample(mu = mean_, FALSE)) )
+
+min(pkg_impl)
+min(cpp_impl)
+density(pkg_impl) %>% plot(col = 'red')
+density(cpp_impl) %>% lines(col = "blue")
+hist(cpp_impl)
 
 
-#needed for openMP parallel
-# Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
-# Sys.setenv("PKG_LIBS"="-fopenmp")
-
-#no of cores for openMP version
-cores = 1
-
-#surce code from same dir
-Rcpp::sourceCpp('src/tn_normal_sampler.cpp')
-
-
-#sample size
-nn=1000
-
-
-bb= 100
-aa=-100
-microbenchmark::microbenchmark( rnorm_trunc(upper = 0,lower = -Inf , mu = 0, sigma = 1)   )
-rnorm_trunc(mu = 0,sigma = 1,lower = -Inf,upper = 10)

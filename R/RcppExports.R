@@ -29,23 +29,3 @@ cppbart_CLASS <- function(x_train, y_mat, x_test, x_cut, n_tree, node_min_size, 
     .Call('_mvnbart4_cppbart_CLASS', PACKAGE = 'mvnbart4', x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, nu, alpha, beta, m, update_sigma, var_selection_bool)
 }
 
-norm_rs <- function(a, b) {
-    .Call('_mvnbart4_norm_rs', PACKAGE = 'mvnbart4', a, b)
-}
-
-half_norm_rs <- function(a, b) {
-    .Call('_mvnbart4_half_norm_rs', PACKAGE = 'mvnbart4', a, b)
-}
-
-unif_rs <- function(a, b) {
-    .Call('_mvnbart4_unif_rs', PACKAGE = 'mvnbart4', a, b)
-}
-
-exp_rs <- function(a, b) {
-    .Call('_mvnbart4_exp_rs', PACKAGE = 'mvnbart4', a, b)
-}
-
-rnorm_trunc <- function(mu, sigma, lower, upper) {
-    .Call('_mvnbart4_rnorm_trunc', PACKAGE = 'mvnbart4', mu, sigma, lower, upper)
-}
-

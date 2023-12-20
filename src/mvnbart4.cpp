@@ -1520,7 +1520,44 @@ Rcpp::List cppbart(arma::mat x_train,
 // =====================================
 // CLASSIFICATION BART FUNCTIONS
 // =====================================
-double up_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double lower, double v_j_,
+
+
+double truncated_sample(double mu, bool left) {
+
+        double x;
+        if(left){
+                mu = -mu;
+        }
+        double alpha = (mu + sqrt((mu) * (mu) + 4.0)) / 2.0;
+        bool accept = false;
+
+        while (!accept) {
+                double z = -log(arma::randu(arma::distr_param(0.0,1.0)))/alpha + (mu);
+                double p;
+
+                if (mu < alpha) {
+                        p = exp(-((alpha - z) * (alpha - z)) / 2.0);
+                } else {
+                        p = exp(-((mu - alpha) * (mu - alpha)) / 2.0) * exp(-((alpha - z) * (alpha - z)) / 2.0);
+                }
+
+                double u = arma::randu(arma::distr_param(0.0,1.0));
+
+                if (u < p) {
+                        if(left){
+                                x = z + mu;
+                        } else {
+                                x = -z + mu;
+                        }
+                        accept = true;
+                }
+        }
+
+
+        return x;
+}
+
+double up_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double v_j_,
                      int i_, int j_,
                      arma::mat &Sigma_mj_mj_inv_, arma::mat &Sigma_j_mj_,
                      arma::mat &Sigma_mj_j_){
@@ -1535,26 +1572,12 @@ double up_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double lower, doub
         z_mj_hat.shed_col(j_);
         double mean_ = mean_mat_(i_,j_) + arma::as_scalar((Sigma_mj_j_.t()*Sigma_mj_mj_inv_)*(z_mj.row(i_)-z_mj_hat.row(i_)).t()); // Old version
 
-        while(sample_bool){
-
-                double sample = R::rnorm(mean_,sqrt(v_j_));
-
-                if(sample > lower){
-                        return sample;
-                } else {
-                        exit++;
-                }
-
-                if(exit > 10000){
-                        sample_bool =  false;
-                }
-        }
-
-        Rcpp::stop(" Choose another upper boundary");
-        return 0.0;
+        return truncated_sample(mean_,true);
 }
 
-double lw_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double upper, double v_j_,
+
+
+double lw_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double v_j_,
                      int i_, int j_,
                      arma::mat &Sigma_mj_mj_inv_, arma::mat &Sigma_j_mj_,
                      arma::mat &Sigma_mj_j_){
@@ -1569,25 +1592,11 @@ double lw_tn_sampler(arma::mat &z_mat_, arma::mat &mean_mat_, double upper, doub
         z_mj_hat.shed_col(j_);
         double mean_ = mean_mat_(i_,j_) + arma::as_scalar((Sigma_mj_j_.t()*Sigma_mj_mj_inv_)*(z_mj.row(i_)-z_mj_hat.row(i_)).t()); // Old version
 
-        while(sample_bool){
+        return truncated_sample(mean_,false);
 
-
-                double sample = R::rnorm(mean_,sqrt(v_j_));
-
-                if(sample <= upper){
-                        return sample;
-                } else {
-                        exit++;
-                }
-
-                if(exit > 10000){
-                        sample_bool =  false;
-                }
-        }
-
-        Rcpp::stop(" Choose another lower boundary");
-        return 0.0;
 }
+
+
 
 // Updating Z
 void update_z(arma::mat &z_mat_,
@@ -1603,10 +1612,10 @@ void update_z(arma::mat &z_mat_,
 
                 if(data.y_mat(i,j_)==1){
                         // cout << "Y_hat(" <<i<<","<<j_<<") :" << y_hat(i,j_) << endl;
-                        z_mat_(i,j_) = up_tn_sampler(z_mat_,y_hat,-10000.0,data.v_j,
+                        z_mat_(i,j_) = up_tn_sampler(z_mat_,y_hat,data.v_j,
                                i,j_,Sigma_mj_mj_inv_,Sigma_j_mj_,Sigma_mj_j_);
                 } else {
-                        z_mat_(i,j_) = lw_tn_sampler(z_mat_,y_hat,10000.0,data.v_j,
+                        z_mat_(i,j_) = lw_tn_sampler(z_mat_,y_hat,data.v_j,
                                i,j_,Sigma_mj_mj_inv_,Sigma_j_mj_,Sigma_mj_j_);
                 }
         }
