@@ -1603,10 +1603,10 @@ void update_z(arma::mat &z_mat_,
 
                 if(data.y_mat(i,j_)==1){
                         // cout << "Y_hat(" <<i<<","<<j_<<") :" << y_hat(i,j_) << endl;
-                        z_mat_(i,j_) = up_tn_sampler(z_mat_,y_hat,0.0,data.v_j,
+                        z_mat_(i,j_) = up_tn_sampler(z_mat_,y_hat,-10000.0,data.v_j,
                                i,j_,Sigma_mj_mj_inv_,Sigma_j_mj_,Sigma_mj_j_);
                 } else {
-                        z_mat_(i,j_) = lw_tn_sampler(z_mat_,y_hat,0.0,data.v_j,
+                        z_mat_(i,j_) = lw_tn_sampler(z_mat_,y_hat,10000.0,data.v_j,
                                i,j_,Sigma_mj_mj_inv_,Sigma_j_mj_,Sigma_mj_j_);
                 }
         }

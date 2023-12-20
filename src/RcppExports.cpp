@@ -127,6 +127,68 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// norm_rs
+double norm_rs(double a, double b);
+RcppExport SEXP _mvnbart4_norm_rs(SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(norm_rs(a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// half_norm_rs
+double half_norm_rs(double a, double b);
+RcppExport SEXP _mvnbart4_half_norm_rs(SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(half_norm_rs(a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// unif_rs
+double unif_rs(double a, double b);
+RcppExport SEXP _mvnbart4_unif_rs(SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(unif_rs(a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// exp_rs
+double exp_rs(double a, double b);
+RcppExport SEXP _mvnbart4_exp_rs(SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(exp_rs(a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rnorm_trunc
+double rnorm_trunc(double mu, double sigma, double lower, double upper);
+RcppExport SEXP _mvnbart4_rnorm_trunc(SEXP muSEXP, SEXP sigmaSEXP, SEXP lowerSEXP, SEXP upperSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type lower(lowerSEXP);
+    Rcpp::traits::input_parameter< double >::type upper(upperSEXP);
+    rcpp_result_gen = Rcpp::wrap(rnorm_trunc(mu, sigma, lower, upper));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mvnbart4_makeSigma", (DL_FUNC) &_mvnbart4_makeSigma, 2},
@@ -136,6 +198,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mvnbart4_log_dmvn", (DL_FUNC) &_mvnbart4_log_dmvn, 2},
     {"_mvnbart4_cppbart", (DL_FUNC) &_mvnbart4_cppbart, 18},
     {"_mvnbart4_cppbart_CLASS", (DL_FUNC) &_mvnbart4_cppbart_CLASS, 17},
+    {"_mvnbart4_norm_rs", (DL_FUNC) &_mvnbart4_norm_rs, 2},
+    {"_mvnbart4_half_norm_rs", (DL_FUNC) &_mvnbart4_half_norm_rs, 2},
+    {"_mvnbart4_unif_rs", (DL_FUNC) &_mvnbart4_unif_rs, 2},
+    {"_mvnbart4_exp_rs", (DL_FUNC) &_mvnbart4_exp_rs, 2},
+    {"_mvnbart4_rnorm_trunc", (DL_FUNC) &_mvnbart4_rnorm_trunc, 4},
     {NULL, NULL, 0}
 };
 
