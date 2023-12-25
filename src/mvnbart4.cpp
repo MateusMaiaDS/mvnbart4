@@ -1227,7 +1227,6 @@ Rcpp::List cppbart(arma::mat x_train,
         int curr = 0;
 
 
-
         // cout << " Error on model.param" << endl;
         // Creating the structu object
         modelParam data(x_train,
@@ -1284,9 +1283,6 @@ Rcpp::List cppbart(arma::mat x_train,
         const int width = 70;
         double pb = 0;
 
-
-        // cout << " Error one " << endl;
-
         // Selecting the train
         Forest all_forest(data);
 
@@ -1303,6 +1299,7 @@ Rcpp::List cppbart(arma::mat x_train,
                 // Initialising PB
                 Rcpp::Rcout << "[";
                 int k = 0;
+
                 // Evaluating progress bar
                 for(;k<=pb*width/data.n_mcmc;k++){
                         Rcpp::Rcout << "=";
@@ -1375,13 +1372,9 @@ Rcpp::List cppbart(arma::mat x_train,
 
                                 // Calculating the current partial U
                                 for(int i_train = 0; i_train < data.y_mat.n_rows;i_train++){
-                                                // cout << "The scale factor of  the residuals " << Sigma_mj_j*Sigma_mj_mj_inv <<endl;
-                                                // arma::cout <<  "Error 1.0 " << endl;
-                                                // arma::cout << (y_mj.row(i_train)).n_rows;
                                                 partial_u(i_train) = arma::as_scalar((Sigma_mj_j.t()*Sigma_mj_mj_inv)*(y_mj.row(i_train)-y_hat_mj.row(i_train)).t()); // Old version
 
                                 }
-                                // arma::cout <<  "Error 2.0 " << endl;
 
                                 double v = Sigma_j_j - arma::as_scalar(Sigma_j_mj*Sigma_mj_mj_inv*Sigma_mj_j);
                                 data.v_j = v;
@@ -1390,7 +1383,6 @@ Rcpp::List cppbart(arma::mat x_train,
 
 
                         data.sigma_mu_j = data.sigma_mu(j);
-                        // Rcpp::Rcout << "error here 4" << endl;
 
 
                         // Updating the tree
@@ -1398,7 +1390,7 @@ Rcpp::List cppbart(arma::mat x_train,
 
                                 // Current tree counter
                                 curr_tree_counter = t + j*data.n_tree;
-                                // cout << "curr_tree_counter value:" << curr_tree_counter << endl;
+
                                 // Creating the auxliar prediction vector
                                 arma::vec y_j_hat(data.y_mat.n_rows,arma::fill::zeros);
                                 arma::vec y_j_test_hat(data.x_test.n_rows,arma::fill::zeros);
@@ -1414,15 +1406,12 @@ Rcpp::List cppbart(arma::mat x_train,
                                 verb = arma::randu(arma::distr_param(0.0,1.0));
 
                                 if(all_forest.trees[curr_tree_counter]->isLeaf & all_forest.trees[curr_tree_counter]->isRoot){
-                                        // verb = arma::randu(arma::distr_param(0.0,0.3));
                                         verb = 0.1;
                                 }
 
                                 // Selecting the verb
                                 if(verb < 0.25){
                                         data.move_proposal(0)++;
-                                        // cout << " Grow error" << endl;
-                                        // Rcpp::stop("STOP ENTERED INTO A GROW");
                                         grow(all_forest.trees[curr_tree_counter],data,partial_residuals,partial_u);
                                 } else if(verb>=0.25 & verb <0.5) {
                                         data.move_proposal(1)++;
@@ -1433,6 +1422,7 @@ Rcpp::List cppbart(arma::mat x_train,
                                 }
 
 
+                                // Updating Mu variable
                                 updateMu(all_forest.trees[curr_tree_counter],data,partial_residuals,partial_u);
 
                                 // Getting predictions

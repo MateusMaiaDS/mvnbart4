@@ -1,10 +1,40 @@
-## Bart
-#' @useDynLib mvnbart4
+#' Multivariate Normal Bayesian Additive Regression trees.
+#' @useDynLib mvnbart
 #' @importFrom Rcpp sourceCpp
 #'
-# Getting the BART wrapped function
+#' @description
+#' \code{mvnbart()} function models a Bayesian Additive Regression trees model considering the Multivariate Normal (MVN) distribution
+#' from the target dependent variable \eqn{Y_{i} \in \mathbb{R}^{d}}.
+#'
+#' @details
+#'
+#' Add more details of the function description
+#'
+#' @returns
+#' In case of a continuous response the model returns
+#' \code{mvnbart} object with the model predictions and parameters for the standard MVN. For the binary-classification problems the probit
+#' Probit-MVN approach is used, and returns the \code{mvnbart} object.
+#'
+#'
+#' @param x_train A \code{data.frame} of the training data covariates.
+#' @param y_mat A numeric matrix of the data responses.
+#' @param x_test A \code{data.frame} of the test data covariates.
+#' @param n_tree The number of trees used in each set of trees for the respective \eqn{j} entry. The total number of trees is given by \eqn{j \times p}.
+#' @param node_min_size The minimun number of observations within a terminal node.
+#' @param n_mcmc The total number of MCMC iterations.
+#' @param n_burn The number of MCMC iterations to be tretead as burn in samples
+#' @param alpha The power parameter used in tree prior.
+#' @param beta The base parameter used in tree prior.
+#' @param df Degrees of freedom for the residuals variance prior. Not used when \eqn{Y} is a binary outcome.
+#' @param sigquant Quantile used to define the residuals variance. Remind that the prior definition is based on \eqn{P(\sigma^{(j)} < \hat{\sigma}^{(j)})} where \eqn{\hat{\sigma}^{(j)}} is a "rough data-based estimation" for example, the sample variance of the observed \eqn{y^{(j)}} values.
+#' @param kappa Hyper-parameter from the \eqn{\mu_{t\ell}^{(j)}} (Chipman et. al 2010). Such that \eqn{\sigma} = 0.25
+#' @param numcut The maximum number of possible values used in the tree decision rules. The uniform approximation for choose a decision rule over \eqn{X^{(j)}} is given a grid of size \code{numcut}.
+#' @param usequants Boolean; if true the quantiles are going to be used to define the grid of cutpoints.
+#' @param m Hyperparameter used in the definition of the prior setting of the correlation matrix for the Probit-Multivariate approach.
+#' @param varimportance Boolean; if true returns a matrix with \code{n_mcmc} rows and \eqn{d} columns corresponding to the total sum of number of times that a variable \eqn{j} was used among all trees of a MCMC iteration.
+#'
 #' @export
-mvnbart4 <- function(x_train,
+mvnbart <- function(x_train,
                   y_mat,
                   x_test,
                   n_tree = 100,
@@ -17,22 +47,23 @@ mvnbart4 <- function(x_train,
                   sigquant = 0.9,
                   kappa = 2,
                   numcut = 100L, # Defining the grid of split rules
-                  scale_y = TRUE,
                   usequants = FALSE,
-                  Sigma_init = NULL,
-                  update_Sigma = TRUE,
-                  conditional_bool = TRUE,
                   m = 20, # Degrees of freed for the classification setting.
-                  var_selection_bool = TRUE,
-                  tn_sampler = TRUE # sampler for the cu
+                  varimportance = TRUE
                   ) {
+
+
+     # Defining initial paramters that are no longer up to the user to define
+     scale_y <- TRUE # If the target variable Y gonna be scaled or not
+     Sigma_init <- NULL # The initial value for the \Sigma matrix initialisation
+     update_Sigma <- TRUE # It always TRUE was only useful to test exeperiments
+     conditional_bool <- TRUE # Again is always true
+     tn_sampler <- TRUE # Define if the truncated-normal sampler gonna be used or not
 
      # Verifying if it's been using a y_mat matrix
      if(NCOL(y_mat)<2){
          stop("Insert a valid multivariate response. ")
      }
-
-
 
      # Changing to a classification model
      if(length(unique(c(y_mat)))==2){
@@ -49,9 +80,11 @@ mvnbart4 <- function(x_train,
      }
 
 
+     # Avoiding error of this kind
      if(class_model & scale_y){
              stop("Classificaton model should not scale y.")
      }
+
      # Verifying if x_train and x_test are matrices
      if(!is.data.frame(x_train) || !is.data.frame(x_test)){
           stop("Insert valid data.frame for both data and xnew.")
@@ -139,8 +172,6 @@ mvnbart4 <- function(x_train,
      # Defining tau_mu_j
      if(class_model){
              tau_mu_j <- rep((n_tree*(kappa^2))/9.0,NCOL(y_mat))
-             # tau_mu_j <- rep((n_tree*(kappa^2))/0.00001,NCOL(y_mat))
-
      } else {
              if(scale_y){
                      tau_mu_j <- rep((4*n_tree*(kappa^2)),NCOL(y_mat))
@@ -220,7 +251,7 @@ mvnbart4 <- function(x_train,
                                  nu,
                                  alpha,beta,
                                  m,update_Sigma,
-                                 var_selection_bool,
+                                 varimportance,
                                  tn_sampler)
      } else {
                 bart_obj <- cppbart(x_train_scale,
@@ -238,7 +269,7 @@ mvnbart4 <- function(x_train,
                                   S_0_wish,
                                   A_j,
                                   update_Sigma,
-                                  var_selection_bool)
+                                  varimportance)
      }
 
 
@@ -257,8 +288,7 @@ mvnbart4 <- function(x_train,
      Sigma_scale <- diag((max_y-min_y))
 
      # Reg_model_bool
-     reg_model <- !class_model
-     if(scale_y & reg_model){
+     if(scale_y){
              for(i in 1:(dim(Sigma_post)[3])){
                      Sigma_post[,,i] <- crossprod(Sigma_scale,tcrossprod(Sigma_post[,,i],Sigma_scale))
                      Sigma_for <- Sigma_for +  Sigma_post[,,i]
@@ -289,7 +319,7 @@ mvnbart4 <- function(x_train,
      if(class_model){
 
              # Case if storing a variable selection or not
-             if(var_selection_bool){
+             if(varimportance){
                      var_importance <- array(NA,dim = c(n_mcmc,ncol(x_test_scale),ncol(y_mat)))
                      for(ii in 1:n_mcmc){
                              for(jj in 1:ncol(y_mat)){
@@ -323,10 +353,12 @@ mvnbart4 <- function(x_train,
                   data = list(x_train = x_train,
                               y_mat = y_mat,
                               x_test = x_test))
+
+             class(list_obj_) <- "mvnbart-probit"
      } else {
 
              # Case if storing a variable selection or not
-             if(var_selection_bool){
+             if(varimportance){
                      var_importance <- array(NA,dim = c(n_mcmc,ncol(x_test_scale),ncol(y_mat)))
                      for(ii in 1:n_mcmc){
                              for(jj in 1:ncol(y_mat)){
@@ -354,14 +386,13 @@ mvnbart4 <- function(x_train,
                                A_j = A_j,
                                mu_init = mu_init,
                                tree_proposal = bart_obj[[5]],
-                               tree_acceptance = bart_obj[[6]],
-                               update_Sigma = update_Sigma,
-                               conditional_bool = conditional_bool),
+                               tree_acceptance = bart_obj[[6]]),
                   mcmc = list(n_mcmc = n_mcmc,
                               n_burn = n_burn),
                   data = list(x_train = x_train,
                               y_mat = y_mat,
                               x_test = x_test))
+             class(list_obj_) <- "mvnbart"
      }
 
      # Return the list with all objects and parameters

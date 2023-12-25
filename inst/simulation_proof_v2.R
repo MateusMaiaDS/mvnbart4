@@ -1,6 +1,6 @@
 # install.packages("devtools")
-devtools::install_github("MateusMaiaDS/mvnbart4")
-
+# devtools::install_github("MateusMaiaDS/mvnbart4")
+devtools::load_all()
 # test for continuous outcomes
 # Generating a new simulated dataset from different Friedman scenario
 # ====
@@ -31,7 +31,7 @@ if(mvn_dim==3){
 
 }
 
-sim_mvn_friedman <- function(n, p, mvn_dim,Sigma,seed = NULL){
+sim_mvn_friedman1 <- function(n, p, mvn_dim,Sigma,seed = NULL){
 
      # Setting the seed
 
@@ -78,10 +78,10 @@ df_x_new <- as.data.frame(sim_new$x)
 
 
 
-mod <- mvnbart4(x_train = df_x,
+mod <- mvnbart(x_train = df_x,
                 y_mat = df_y,
-                x_test = df_x_new,scale_y = FALSE,
-                var_selection_bool = TRUE,
+                x_test = df_x_new,
+                varimportance = TRUE,
                 df = 10,n_tree = 100)
 
 
