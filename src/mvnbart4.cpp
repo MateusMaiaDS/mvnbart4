@@ -1100,6 +1100,7 @@ void Node::nodeLogLike(modelParam& data){
         return;
 }
 
+
 // UPDATING MU
 void updateMu(Node* tree, modelParam &data, arma::vec &curr_r, arma::vec &curr_u){
 
@@ -1369,10 +1370,11 @@ Rcpp::List cppbart(arma::mat x_train,
 
                         // Calculating the invertion that gonna be used for the U and V
                         arma::mat Sigma_mj_mj_inv = arma::inv(Sigma_mj_mj);
+                        arma::mat Sigma_calculation_aux = (Sigma_mj_j.t()*Sigma_mj_mj_inv); // This line calculate a quantitiy that is constant for the i_train so avoids multiple calculations;
 
                                 // Calculating the current partial U
                                 for(int i_train = 0; i_train < data.y_mat.n_rows;i_train++){
-                                                partial_u(i_train) = arma::as_scalar((Sigma_mj_j.t()*Sigma_mj_mj_inv)*(y_mj.row(i_train)-y_hat_mj.row(i_train)).t()); // Old version
+                                                partial_u(i_train) = arma::as_scalar(Sigma_calculation_aux*(y_mj.row(i_train)-y_hat_mj.row(i_train)).t()); // Old version
 
                                 }
 
