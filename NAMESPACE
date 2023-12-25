@@ -3,4 +3,4 @@
 export(k_fold)
 export(mvnbart)
 importFrom(Rcpp,sourceCpp)
-useDynLib(mvnbart)
+useDynLib(mvnbart4)
